@@ -48,7 +48,13 @@ await once('bookBound', () => send(ctx, me, callTx('BehaviorBook', book, 'setPoo
 
 const card = await deploy('card', 'AgentCard', [token])
 const merchant = await once('merchant', () => process.env.MERCHANT || privateKeyToAccount(generatePrivateKey()).address)
-const shop = await deploy('shop', 'CreditShop', [token, pool, merchant, COLLATERAL, BASE_PRICE])
+// Optional: let receipts land in MerchantTreasury so the merchant withdraws on their own
+// schedule. Set MERCHANT_TREASURY=1 (and MERCHANT=your address, or you cannot withdraw).
+const payee = await once('payee', async () => {
+  if (process.env.MERCHANT_TREASURY !== '1') return merchant
+  return deploy('treasury', 'MerchantTreasury', [token, merchant])
+})
+const shop = await deploy('shop', 'CreditShop', [token, pool, payee, COLLATERAL, BASE_PRICE])
 const lens = await deploy('lens', 'OpenScoreLens', [token, card, pool, book, shop, scoreCard, neural, COLLATERAL])
 const decoyBook = await deploy('decoyBook', 'BehaviorBook')
 const decoyPool = await deploy('decoyPool', 'DecoyPool', [token, decoyBook, registry, scoreCardAlt])

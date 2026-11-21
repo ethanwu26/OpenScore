@@ -28,6 +28,9 @@ contract CreditShop {
     error OnlyPool();
 
     uint256 public purchases;
+    uint256 public volume; // gross charged, in USD units
+    mapping(address => uint256) public paidBy; // agent => gross charged
+    mapping(address => uint256) public receivedBy; // payee => gross charged
 
     constructor(address _usd, address _pool, address _merchant, uint128 _refCollateral, uint256 _basePrice) {
         usd = IERC20Pay(_usd);
@@ -50,8 +53,16 @@ contract CreditShop {
         (score, price) = priceFor(agent);
         if (score < MIN_SCORE) revert ScoreTooLow(score);
         purchases += 1;
+        volume += price;
+        paidBy[agent] += price;
+        receivedBy[merchant] += price;
         emit Purchased(agent, score, price, purchases);
         return (price, merchant);
+    }
+
+    /// @notice Receipts at a glance: how many purchases, and how much was charged in total.
+    function stats() external view returns (uint256 count, uint256 grossVolume) {
+        return (purchases, volume);
     }
 
     /// @notice Pay with the agent's own balance instead of the card.
@@ -61,6 +72,9 @@ contract CreditShop {
         if (score < MIN_SCORE) revert ScoreTooLow(score);
         require(usd.transferFrom(msg.sender, merchant, price), "PAY");
         purchases += 1;
+        volume += price;
+        paidBy[msg.sender] += price;
+        receivedBy[merchant] += price;
         emit Purchased(msg.sender, score, price, purchases);
     }
 }

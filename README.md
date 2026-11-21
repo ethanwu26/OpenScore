@@ -42,7 +42,7 @@ Agent 刷卡买服务 → 商户当场到账（让出 1% 手续费给出资人�
 ## 目录
 
 ```
-contracts/     Foundry 工程：src 是合约，test 是 33 个测试
+contracts/     Foundry 工程：src 是合约，test 是 39 个测试
 artifacts/     编译产物（abi + bytecode），已入库，部署只需要 Node
 scripts/       deploy / seed / bench / status
 deployments/   部署后生成的地址文件；demo-keys.*.json 是演示 Agent 的私钥，不入库
@@ -57,9 +57,10 @@ web/           前端（Vite + React + viem），构建结果是纯静态站点
 | `RiskModel` | 385 个参数的神经网络，第二意见 |
 | `ModelRegistry` | 模型登记与随机抽检，抽检失败永久冻结 |
 | `BehaviorBook` | 行为账本，只有资金池能写，模型的十个特征全部来自这里 |
-| `CreditPool` | 资金池：`swipe` 刷卡、`repay` 还款并退押金、`liquidate` 清算 |
+| `CreditPool` | 资金池：`swipe` 刷卡、`repay` 还款并退押金、`liquidate` 清算。押金按借款人记账（`collateralOf` / `totalCollateral`），1% 手续费按份额累计，出资人自己 `claimFees` |
 | `AgentCard` | 主人给 Agent 发卡并划拨押金 |
-| `CreditShop` | 一个按分数定价的付费服务：250 分以下拒绝，600 分及以上八折 |
+| `CreditShop` | 一个按分数定价的付费服务：250 分以下拒绝，600 分及以上八折。逐笔记下成交额与每个 Agent 的消费（`volume` / `paidBy` / `receivedBy`） |
+| `MerchantTreasury` | 可选收款账户：商户把收款地址设成它，刷卡款先到这里，商户随时 `withdraw`，别人动不了 |
 | `OpenScoreLens` | 只读聚合，前端一次调用取回整页数据 |
 | `DecoyPool` + `ScoreCardAlt` | 抽检演示用：一个订阅了被篡改模型的资金池 |
 | `Bench` | 一万户账本的两种写法，执行 gas 在合约内部用 `gasleft()` 自测 |
@@ -83,7 +84,7 @@ web/           前端（Vite + React + viem），构建结果是纯静态站点
 
 ## 技术栈
 
-Solidity 与 Foundry（合约与 33 个测试）；Vite、React 18、viem（前端直连 RPC，读链不经过后端）；Node 24 与 SQLite（观众账号服务，GitHub OAuth 授权码 + PKCE）；静态站点托管在 nginx，Cloudflare 前置。
+Solidity 与 Foundry（合约与 39 个测试）；Vite、React 18、viem（前端直连 RPC，读链不经过后端）；Node 24 与 SQLite（观众账号服务，GitHub OAuth 授权码 + PKCE）；静态站点托管在 nginx，Cloudflare 前置。
 
 ## 运行
 
@@ -99,6 +100,8 @@ node scripts/bench.mjs --size mini          # 账本对照：先只看估算
 node scripts/bench.mjs --size mini --yes    # 确认后发送
 node scripts/status.mjs       # 随时查看链上状态，不花钱
 ```
+
+想让商户收款先落到 `MerchantTreasury`（商户自己再提现）：`MERCHANT=<商户地址> MERCHANT_TREASURY=1 node scripts/deploy.mjs`。不设置时刷卡款仍直接付给商户地址，与之前的演示一致。
 
 三个写链的脚本都可以中断后重跑，会从断点继续。Monad 按 gas 上限扣费，脚本把每笔上限设为估算值加一小段余量。
 
@@ -147,7 +150,7 @@ npm run build      # 产出 web/dist，纯静态
 anvil --block-time 1
 RPC_URL=http://127.0.0.1:8545 node scripts/deploy.mjs
 RPC_URL=http://127.0.0.1:8545 node scripts/seed.mjs
-cd contracts && forge test      # 33 个测试，不依赖 forge-std
+cd contracts && forge test      # 39 个测试，不依赖 forge-std
 ```
 
 改了合约之后：`forge build`，再回到根目录 `node scripts/build-artifacts.mjs`。
@@ -213,7 +216,8 @@ f = [0, 1000, 0, 0, 1000, 100, 0, 1000, 0, 100]
 
 ## 已知的不足
 
-- 资金池不收利息，出资人的收入只有每笔刷卡 1% 的手续费，而且目前只是留在池子里，没有按份额分配。
+- 资金池不收利息，出资人的收入只有每笔刷卡 1% 的手续费。手续费已按份额累计、可随时 `claimFees` 领取，但它仍是唯一收入来源，且不会自动复投；整除产生的零星尾差留在 `feeReserve` 里，等下一轮再分。
+- 测试网上已部署的实例（2026-11-21 早间）不包含押金账目、手续费份额与 `MerchantTreasury`，这几项要重新部署才能用；前端目前只调用旧接口，所以展示不受影响。
 - 评分卡的表是在人的还款数据上拟合的（上一节把一条人记录和一条 Agent 记录并排算过）；Agent 的违约样本要等链上攒够才能重训，届时表会换、分数会整体平移。
 - 一次便宜的借还就能拿到大部分还款历史分。挡住刷分的是额度不超过押金、违约终身减半，以及要满一年才给的 150 分。
 - 超过押金的额度规则已写进合约（满 7 天、满 3 期、零违约），测试网上等不到，今天没有演示。

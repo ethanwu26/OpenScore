@@ -80,10 +80,27 @@ contract CreditPool {
     mapping(address => uint256) public depositOf; // lender => principal supplied
     mapping(address => uint256[]) internal _loansOf;
 
+    /// Collateral accounting: what each borrower locked, and what the pool holds in total.
+    mapping(address => uint256) public collateralOf;
+    uint256 public totalCollateral;
+
+    /// Interchange is split by share. One share is one unit of principal supplied; fees
+    /// accumulate per share, so a lender who stays longer earns more without a loop.
+    uint256 public constant SHARE_SCALE = 1e18;
+    uint256 public totalShares;
+    mapping(address => uint256) public sharesOf;
+    mapping(address => uint256) public claimedOf;
+    uint256 public accFeePerShare;
+    uint256 public feeReserve; // collected fees not claimed yet, still inside liquidity
+
     event Swiped(
         uint256 indexed id, address indexed agent, address indexed shop, address merchant, uint256 price, uint256 interchange
     );
     event CollateralReturned(uint256 indexed id, address indexed borrower, uint128 collateral);
+    event CollateralLocked(address indexed borrower, uint256 amount, uint256 total);
+    event CollateralReleased(address indexed borrower, uint256 amount, uint256 total);
+    event FeesAccrued(uint256 amount, uint256 perShare);
+    event FeesClaimed(address indexed lender, uint256 amount);
 
     event Scored(address indexed user, uint16 score, uint256 limit);
     event Borrowed(uint256 indexed id, address indexed borrower, uint128 amount, uint128 collateral, uint16 score, uint96 fee);
@@ -177,20 +194,66 @@ contract CreditPool {
         return registry.modelOf(modelId);
     }
 
+    /// @notice Supply principal. Pending fees are settled first, so shares always start clean.
     function deposit(uint256 amount) external {
+        if (amount == 0) revert BadAmount();
+        _settle(msg.sender);
         require(usd.transferFrom(msg.sender, address(this), amount), "TRANSFER");
         liquidity += amount;
         depositOf[msg.sender] += amount;
+        sharesOf[msg.sender] += amount;
+        totalShares += amount;
         emit LiquidityChanged(msg.sender, int256(amount), liquidity);
     }
 
-    /// @notice A lender can take back at most what they supplied, and only what is not lent out.
+    /// @notice Take back principal, plus whatever fees this lender already earned.
+    ///         Unclaimed fees stay behind: they belong to the other lenders.
     function withdraw(uint256 amount) external {
-        if (amount > liquidity || amount > depositOf[msg.sender]) revert NoLiquidity();
+        if (amount == 0 || amount > depositOf[msg.sender]) revert NoLiquidity();
+        _settle(msg.sender);
+        if (amount > liquidity || amount > liquidity - feeReserve) revert NoLiquidity();
         depositOf[msg.sender] -= amount;
+        sharesOf[msg.sender] -= amount;
+        totalShares -= amount;
         liquidity -= amount;
         require(usd.transfer(msg.sender, amount), "TRANSFER");
         emit LiquidityChanged(msg.sender, -int256(amount), liquidity);
+    }
+
+    /// @notice Collect the interchange this lender has earned so far.
+    function claimFees() external returns (uint256 paid) {
+        paid = _settle(msg.sender);
+    }
+
+    function pendingFees(address who) public view returns (uint256) {
+        uint256 owed = (sharesOf[who] * accFeePerShare) / SHARE_SCALE;
+        return owed > claimedOf[who] ? owed - claimedOf[who] : 0;
+    }
+
+    /// @dev Pays out the difference between what the share counter owes and what was paid.
+    function _settle(address who) internal returns (uint256 paid) {
+        uint256 owed = (sharesOf[who] * accFeePerShare) / SHARE_SCALE;
+        if (owed <= claimedOf[who]) return 0;
+        paid = owed - claimedOf[who];
+        claimedOf[who] = owed;
+        feeReserve -= paid;
+        liquidity -= paid;
+        require(usd.transfer(who, paid), "TRANSFER");
+        emit FeesClaimed(who, paid);
+    }
+
+    /// @dev Records the merchant discount as lender income. Rounding dust stays in
+    ///      feeReserve and is claimable only through future rounds.
+    function _accrueFees(uint256 amount) internal {
+        if (amount == 0) return;
+        feeReserve += amount;
+        if (totalShares > 0) accFeePerShare += (amount * SHARE_SCALE) / totalShares;
+        emit FeesAccrued(amount, accFeePerShare);
+    }
+
+    /// @notice One call for dashboards: lendable, lent out, locked collateral, unclaimed fees.
+    function poolStats() external view returns (uint256 lendable, uint256 lentOut, uint256 collateralLocked, uint256 feesUnclaimed) {
+        return (liquidity, outstanding, totalCollateral, feeReserve);
     }
 
     /// @notice A fresh address has no history, so its score is whatever the model says
@@ -228,9 +291,13 @@ contract CreditPool {
         book.touch(borrower);
         book.setLimit(borrower, collateral);
         require(usd.transferFrom(borrower, address(this), collateral), "COLLATERAL");
+        collateralOf[borrower] += collateral;
+        totalCollateral += collateral;
+        emit CollateralLocked(borrower, collateral, totalCollateral);
         liquidity -= uint256(amount) + fee - cut;
         outstanding += amount;
         earned += cut;
+        _accrueFees(cut);
         require(usd.transfer(payTo, amount - cut), "TRANSFER");
         if (fee > 0) {
             uint96 f1 = registry.feeOf(modelId);
@@ -271,6 +338,9 @@ contract CreditPool {
         if (l.principal == 0) {
             l.closed = true;
             uint128 col = l.collateral;
+            collateralOf[msg.sender] -= col;
+            totalCollateral -= col;
+            emit CollateralReleased(msg.sender, col, totalCollateral);
             require(usd.transfer(msg.sender, col), "COLLATERAL");
             emit CollateralReturned(id, msg.sender, col);
         }
@@ -285,6 +355,9 @@ contract CreditPool {
         // The seized collateral replaces the principal that will not come back.
         outstanding -= l.principal;
         liquidity += col;
+        collateralOf[l.borrower] -= col;
+        totalCollateral -= col;
+        emit CollateralReleased(l.borrower, col, totalCollateral);
         book.record(l.borrower, l.principal, 0, 1);
         book.noteDefault(l.borrower);
         emit Liquidated(id, col);

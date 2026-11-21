@@ -13,6 +13,7 @@ import {CreditShop} from "../src/CreditShop.sol";
 import {OpenScoreLens} from "../src/OpenScoreLens.sol";
 import {DecoyPool} from "../src/DecoyPool.sol";
 import {Bench} from "../src/Bench.sol";
+import {MerchantTreasury} from "../src/MerchantTreasury.sol";
 
 interface Vm {
     function prank(address) external;
@@ -238,5 +239,99 @@ contract CardTest {
         eq(b.denseAt(0), 8, "dense balance");
         eq(b.denseAt(9_999), 8, "dense balance tail");
         eq(b.scatteredAt(300), 8, "scattered balance");
+    }
+
+    // ---- collateral ledger, fee share, merchant receipts ----
+
+    function _fund(address who, uint256 amt) internal {
+        token.mint(who, amt);
+        vm.prank(who);
+        token.approve(address(pool), amt);
+        vm.prank(who);
+        pool.deposit(amt);
+    }
+
+    function testCollateralLedgerTracksLockAndRelease() public {
+        eq(pool.totalCollateral(), 0, "empty");
+        vm.prank(agent);
+        (uint256 id,) = pool.swipe(address(shop), COL, 1);
+        eq(pool.collateralOf(agent), COL, "locked");
+        eq(pool.totalCollateral(), COL, "total locked");
+        vm.prank(agent);
+        pool.repay(id, uint128(PRICE));
+        eq(pool.collateralOf(agent), 0, "released");
+        eq(pool.totalCollateral(), 0, "total released");
+    }
+
+    function testFeeSplitFollowsShares() public {
+        address bob = address(0xB0B);
+        _fund(bob, 5_000_000e18); // 50 / 50 with the lender from setUp
+        vm.prank(agent);
+        pool.swipe(address(shop), COL, 1);
+        eq(pool.earned(), 100e18, "fee collected");
+        eq(pool.feeReserve(), 100e18, "fee reserve");
+        eq(pool.pendingFees(address(this)), 50e18, "half for this lender");
+        eq(pool.pendingFees(bob), 50e18, "half for the other");
+
+        uint256 before = token.balanceOf(bob);
+        vm.prank(bob);
+        uint256 paid = pool.claimFees();
+        eq(paid, 50e18, "claimed");
+        eq(token.balanceOf(bob), before + 50e18, "token in");
+        eq(pool.pendingFees(bob), 0, "nothing left");
+        eq(pool.feeReserve(), 50e18, "other half still reserved");
+    }
+
+    function testWithdrawSettlesFeesAndLeavesTheReserve() public {
+        address bob = address(0xB0B);
+        _fund(bob, 1_000_000e18);
+        vm.prank(agent);
+        pool.swipe(address(shop), COL, 1);
+
+        uint256 before = token.balanceOf(bob);
+        vm.prank(bob);
+        pool.withdraw(1_000_000e18);
+        require(token.balanceOf(bob) > before + 1_000_000e18, "fees paid on the way out");
+        eq(pool.sharesOf(bob), 0, "shares burned");
+        eq(pool.pendingFees(bob), 0, "settled");
+        require(pool.feeReserve() > 0, "reserve stays for the others");
+    }
+
+    function testWithdrawCannotTakeUnclaimedFees() public {
+        vm.prank(agent);
+        pool.swipe(address(shop), COL, 1);
+        uint256 all = pool.liquidity();
+        vm.expectRevert();
+        pool.withdraw(all); // the reserve belongs to fees, not to principal
+    }
+
+    function testShopKeepsReceipts() public {
+        vm.prank(agent);
+        pool.swipe(address(shop), COL, 1);
+        (uint256 count, uint256 gross) = shop.stats();
+        eq(count, 1, "one purchase");
+        eq(gross, PRICE, "gross volume");
+        eq(shop.volume(), PRICE, "volume");
+        eq(shop.paidBy(agent), PRICE, "agent charged");
+        eq(shop.receivedBy(merchant), PRICE, "merchant credited");
+    }
+
+    function testMerchantTreasuryPaysOnlyTheMerchant() public {
+        MerchantTreasury t = new MerchantTreasury(address(token), merchant);
+        token.mint(address(t), 1_000e18);
+        eq(t.balance(), 1_000e18, "balance");
+
+        vm.expectRevert(MerchantTreasury.NotMerchant.selector);
+        vm.prank(stranger);
+        t.withdraw(stranger, 1e18);
+
+        vm.prank(merchant);
+        t.withdraw(merchant, 400e18);
+        eq(token.balanceOf(merchant), 400e18, "paid out");
+
+        vm.prank(merchant);
+        t.withdrawAll(merchant);
+        eq(t.balance(), 0, "swept");
+        eq(t.totalWithdrawn(), 1_000e18, "total");
     }
 }

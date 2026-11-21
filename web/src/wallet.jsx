@@ -11,16 +11,16 @@ const tierOrder = ['high','medium','low']
 
 // One task each; the identity page picks the person, this page picks who does the work.
 const AGENTS = [
-  { name: '构建助手', brief: '帮我审一下这次的提交，找出可能的空指针和边界问题。',
+  { name: '构建助手', logo: 'avatars/agent-build.svg', brief: '帮我审一下这次的提交，找出可能的空指针和边界问题。',
     task: '为一次代码审查购买推理服务',
     result: '审完了：3 处空指针风险，其中 2 处给了改法，1 处需要你确认业务语义。' },
-  { name: '文献助手', brief: '把这三篇论文压成一页要点，标明各自的实验条件。',
+  { name: '文献助手', logo: 'avatars/agent-paper.svg', brief: '把这三篇论文压成一页要点，标明各自的实验条件。',
     task: '为论文摘要购买推理服务',
     result: '整理好了：三篇的方法差异在采样策略，实验条件已按数据集分开标注。' },
-  { name: '校对助手', brief: '校对这版稿件，标出错别字和语气前后不一致的地方。',
+  { name: '校对助手', logo: 'avatars/agent-proof.svg', brief: '校对这版稿件，标出错别字和语气前后不一致的地方。',
     task: '为稿件校对购买推理服务',
     result: '校对完了：7 处错别字、3 处语气不一致，修改建议附在文末。' },
-  { name: '原型助手', brief: '评审这版原型，按影响大小列出可用性问题。',
+  { name: '原型助手', logo: 'avatars/agent-proto.svg', brief: '评审这版原型，按影响大小列出可用性问题。',
     task: '为原型评审购买推理服务',
     result: '评完了：2 个阻断级问题（找不到撤销入口、空状态没有下一步），5 条建议。' },
 ]
@@ -199,18 +199,42 @@ function GrantScene({ profile, agent, name, setName, rebinding, busy, onIssue, o
   </Scene>
 }
 
-/// The Agent's session view: messages and tool calls appear one by one while it works.
-function Transcript({ items, started, step = 850 }) {
+/// The Agent's session view: a threaded transcript, so the order is read top to bottom.
+function ToolMark() {
+  return <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+    <path d="M14.5 7H18a3.5 3.5 0 0 1 0 7h-3.5"/><path d="M9.5 17H6a3.5 3.5 0 0 1 0-7h3.5"/><path d="M9 12h6"/>
+  </svg>
+}
+
+function TurnMark({ item, profile, agent }) {
+  if (item.kind === 'tool') return <span className="turn-mark tool"><ToolMark/></span>
+  if (item.kind === 'user') return <span className="turn-mark person"><Portrait profile={profile} size={32}/></span>
+  return <span className="turn-mark bot"><img src={agent.logo} width="32" height="32" alt="" loading="lazy" decoding="async"/></span>
+}
+
+function Transcript({ items, started, profile, agent, step = 850 }) {
   const n = useSequence(started, items.length, step)
   const shown = started ? n : 1
   const done = started && n >= items.length
   return <div className="session">
-    <div className="session-head"><i aria-hidden="true"/>Agent 会话 · {started ? (done ? '已完成' : '运行中') : '等待开始'}</div>
+    <div className="session-head">
+      <span className="session-bot"><img src={agent.logo} width="20" height="20" alt=""/></span>
+      <b>{agent.name}</b><span className="session-state">{started ? (done ? '已完成' : '运行中') : '等待开始'}</span>
+      <i className={started && !done ? 'live' : ''} aria-hidden="true"/>
+    </div>
     <ol className="transcript" aria-live="polite">
-      {items.slice(0, shown).map((item, i) => item.kind === 'tool'
-        ? <li className="msg tool" key={i}><span className="tool-name">{item.name}</span><span>{item.text}</span></li>
-        : <li className={`msg ${item.kind}`} key={i}><span className="msg-who">{item.who}</span><p>{item.text}</p></li>)}
-      {started && !done && <li className="msg typing" aria-label="Agent 正在处理"><i/><i/><i/></li>}
+      {items.slice(0, shown).map((item, i) => <li className={`turn ${item.kind}`} key={i}>
+        <TurnMark item={item} profile={profile} agent={agent}/>
+        <div className="turn-body">
+          <p className="turn-who">{item.who}{item.kind === 'tool' && <span className="turn-tag">链上调用</span>}</p>
+          <p className="turn-text">{item.text}</p>
+        </div>
+      </li>)}
+      {started && !done && <li className="turn agent" aria-label={`${agent.name} 正在处理`}>
+        <span className="turn-mark bot"><img src={agent.logo} width="32" height="32" alt=""/></span>
+        <div className="turn-body"><p className="turn-who">{agent.name}</p>
+          <span className="typing"><i/><i/><i/></span></div>
+      </li>}
     </ol>
   </div>
 }
@@ -223,13 +247,12 @@ function RunScene({ card, agent, onSwipe, onNext }) {
   const score = scoreOf(snapshot)
   const price = priceOf(snapshot)
   const fee = price / 100
-  const limit = limitOf(snapshot) - snapshot.debt
   const items = [
     { kind: 'user', who: '主人', text: agent.brief },
-    { kind: 'agent', who: agent.name, text: '要读完这次上下文，需要一次推理调用。先确认这张卡付得起。' },
-    { kind: 'tool', name: 'CreditShop.checkout', text: `报价 ${money(price)} USD（${score} 分${price < 10000 ? '，已过 600 分八折线' : '，未到 600 分八折线'}）` },
-    { kind: 'tool', name: 'CreditPool.swipe', text: `算分 ${score}，额度 ${money(limit)} ≥ ${money(price)}，放行；记账 ${money(price)} USD` },
-    { kind: 'tool', name: 'CreditPool', text: `商户到账 ${money(price - fee)}，手续费 ${money(fee)} 留给出资人` },
+    { kind: 'agent', who: agent.name, text: '这需要读完整个上下文。我先用副卡买一次推理调用。' },
+    { kind: 'tool', who: 'CreditShop.checkout', text: `商户按 ${score} 分报价${price < 10000 ? '，已过八折线' : '，还没到八折线'}。` },
+    { kind: 'tool', who: 'CreditPool.swipe', text: '额度够用，资金池放行并先行垫付。' },
+    { kind: 'tool', who: 'CreditPool', text: '商户当场收到款，手续费留给出资人。' },
     { kind: 'agent', who: agent.name, text: agent.result },
   ]
   const n = useSequence(started, items.length)
@@ -238,7 +261,7 @@ function RunScene({ card, agent, onSwipe, onNext }) {
   return <Scene act="第四幕 · Agent 刷卡" title={`${agent.name} 开工了`}
     intro="这就是它工作时的样子：一边对话，一边为这次推理调用付钱。每一行工具调用都是链上真实发生的动作。">
     <div className="session-stage">
-      <Transcript items={items} started={started}/>
+      <Transcript items={items} started={started} profile={card.profile} agent={agent}/>
       <div className="order-card">
         <p className="order-eyebrow">本次调用</p>
         <h2>{agent.task}</h2>
@@ -265,12 +288,12 @@ function RepayScene({ card, agent, onRepay, onNext }) {
   const after = useRef(card.debt ? changeCard(card, 'repay') : card).current
   const [started, setStarted] = useState(false)
   const items = [
-    { kind: 'agent', who: agent.name, text: `任务完成了，账单 ${money(before.debt)} USD 记在我名下。` },
+    { kind: 'agent', who: agent.name, text: '任务完成了，这一单的账记在我名下。' },
     { kind: 'user', who: '主人', text: '按时还清。' },
-    { kind: 'tool', name: 'CreditPool.repay', text: `还款 ${money(before.debt)} USD，押金 ${money(deposit)} 解除锁定` },
-    { kind: 'tool', name: 'BehaviorBook.record', text: `第 1 期：应还 ${money(before.debt)}，实还 ${money(before.debt)}，按时` },
-    { kind: 'tool', name: 'ScoreCard', text: `${scoreOf(before)} 分 → ${scoreOf(after)} 分；额度 ${money(limitOf(before))} → ${money(limitOf(after))} USD` },
-    { kind: 'agent', who: agent.name, text: `还清了。下一单同类服务 ${money(priceOf(after))} USD${priceOf(after) < priceOf(before) ? '，八折生效。' : '。'}` },
+    { kind: 'tool', who: 'CreditPool.repay', text: '还清欠款，押金解除锁定。' },
+    { kind: 'tool', who: 'BehaviorBook.record', text: '这一期记为按时还款。' },
+    { kind: 'tool', who: 'ScoreCard', text: '分数和额度重新算过一遍。' },
+    { kind: 'agent', who: agent.name, text: priceOf(after) < priceOf(before) ? '还清了。下次同样的服务打八折。' : '还清了。记录又攒了一期。' },
   ]
   const n = useSequence(started, items.length)
   const done = started && n >= items.length
@@ -278,7 +301,7 @@ function RepayScene({ card, agent, onRepay, onNext }) {
   return <Scene act="第五幕 · 按时还清" title="账单还掉，分数自己会涨"
     intro="还款不由任何人打分：这一期记录写进行为账本，评分卡立刻重算，下一单的价格随之改变。">
     <div className="session-stage">
-      <Transcript items={items} started={started}/>
+      <Transcript items={items} started={started} profile={card.profile} agent={agent}/>
       <div className="order-card statement">
         <p className="order-eyebrow">本期账单</p>
         <h2>{agent.name} · 待还</h2>

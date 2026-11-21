@@ -4,3 +4,7 @@ Source: DiceBear "Notionists" (https://www.dicebear.com/styles/notionists/), gen
 2026-11-21 with 48 distinct seeds, 160px.
 License: Creative Commons Zero 1.0 (public domain), as embedded in each SVG's metadata.
 Files are self-hosted so the demo does not request a third-party image host at showtime.
+
+Agent marks: agent-build.svg, agent-paper.svg, agent-proof.svg, agent-proto.svg
+Generated with DiceBear "Shapes" (CC0), 96px, on a pale green background. Used as
+the agent's logo in the session view, not as a portrait.

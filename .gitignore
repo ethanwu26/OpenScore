@@ -18,5 +18,5 @@ Documents/
 screenshots/
 
 # The demo deck is a presentation asset, kept out of the code repository.
-明码分-演示.pptx
-明码分-演示.pdf
+明码分-演示*.pptx
+明码分-演示*.pdf

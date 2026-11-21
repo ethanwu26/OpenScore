@@ -289,30 +289,16 @@ input { min-width:0; max-width:100%; }
 .settings input[readonly] {background:var(--bg);font-size:14px;}
 .settings .btn {min-height:44px;}
 
-.opening:has(.order-demo) {grid-template-columns:1.06fr 1fr;gap:clamp(20px,5vw,66px);padding-block:clamp(32px,4.5vw,62px);}
-.opening:has(.order-demo) h1 {font-size:clamp(34px,3.9vw,55px);line-height:1.23;text-wrap:balance;}
-.order-demo {border:1px solid var(--line);border-radius:15px;overflow:hidden;background:var(--card);min-width:0;}
-.order-cover {position:relative;isolation:isolate;overflow:hidden;padding:18px 24px;background:var(--face);color:#f1f8e6;}
-.order-cover .engraving {width:42%;right:-8%;top:-14%;}
-.order-title {display:grid;margin-top:15px;gap:2px;}.order-title span {color:#d0e0d1;font-size:14px;}.order-title strong {font-size:clamp(22px,2.5vw,30px);}
-.order-paper {padding:18px 24px;}
-.order-state,.order-price {display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
-.order-state {color:var(--good);}.order-state span {font-size:14px;}
-.order-price {margin:8px 0;border-bottom:1px dashed var(--line);padding-bottom:10px;}
+.order-price {display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:8px 0;border-bottom:1px dashed var(--line);padding-bottom:10px;}
 .order-price strong {font-size:clamp(30px,3.5vw,48px);font-variant-numeric:tabular-nums;line-height:1.25;}
 .order-price small {font-size:13px;}
 .ticket-lines {display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;margin:10px 0;}
 .ticket-lines dt {color:var(--muted);}.ticket-lines dd {margin:0;text-align:right;font-weight:650;font-variant-numeric:tabular-nums;}
-.order-paper p {margin:12px 0;min-height:3em;}.order-paper button {width:100%;min-height:44px;}
-.pilot {display:grid;grid-template-columns:1.4fr 1fr;align-items:start;gap:clamp(18px,4vw,48px);padding:24px 0 30px;border-top:1px solid var(--line);}
-.pilot h2 {font-size:clamp(22px,2.3vw,31px);}.pilot p,.task-line {color:var(--muted);}.pilot details {padding-top:5px;}
+.task-line {color:var(--muted);}
 .paid-result {border-block:1px solid var(--line);padding:16px 0;margin:18px 0;}.paid-result h2 {font-size:22px;}.paid-result p {color:var(--good);margin-bottom:0;}
 .guest-action .ticket-lines {margin:15px 0;border-block:1px dashed var(--line);padding:10px 0;}
 .bench-links {display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;}
 @media(max-width:700px){
-  .opening:has(.order-demo),.pilot {grid-template-columns:minmax(0,1fr);}
-  .order-paper,.order-cover {padding:15px 16px;}.order-paper p {min-height:0;}
-  .opening:has(.order-demo) h1 {font-size:clamp(30px,6.9vw,42px);}
   .paid-result .ticket-lines {font-size:14px;}
 }
 
@@ -450,3 +436,25 @@ input { min-width:0; max-width:100%; }
 .share-card a {font-size:14px;font-weight:650;}
 .share-card img {flex:none;border-radius:6px;image-rendering:pixelated;}
 @media(max-width:560px) {.share-card img {width:96px;height:96px;}}
+
+/* Home page: explain, do not simulate. */
+.hero-kicker {margin:0 0 10px;font-size:12.5px;letter-spacing:.06em;color:var(--muted);}
+.hero-hint {margin:14px 0 0;font-size:13px;color:var(--muted);}
+.intro-hero .opening-copy p {max-width:31em;}
+.preview-face {margin:0;width:100%;max-width:440px;justify-self:end;}
+.preview-face .sample-person {margin-top:24px;}
+.preview-face .sample-score {margin:8px 0 4px;}
+.preview-price {display:flex;align-items:baseline;gap:8px;border-top:1px solid #648776;padding-top:12px;margin-top:12px;}
+.preview-price span {font-size:14px;}
+.preview-price b {font-size:21px;}
+.preview-price em {margin-left:auto;font-style:normal;font-size:12px;font-weight:700;color:#123f34;background:#d5f69c;border-radius:4px;padding:2px 7px;}
+.preview-face + figcaption {margin:10px 0 0;color:var(--muted);font-size:13px;text-align:right;}
+.guide {padding-top:24px;}
+.route-intro {margin:-4px 0 18px;font-size:15px;line-height:1.7;color:var(--muted);max-width:46em;}
+.guide .route-list a {padding:14px 0 18px;}
+@media(max-width:700px) {
+  .preview-face {justify-self:center;}
+  .preview-face + figcaption {text-align:center;}
+  .intro-hero h1 {font-size:clamp(30px,7.2vw,40px);}
+  .preview-price b {font-size:19px;}
+}

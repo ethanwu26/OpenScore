@@ -117,7 +117,7 @@ npm run build      # 产出 web/dist，纯静态
 
 私钥只存在浏览器本地存储里。
 
-### 观众登录、三档授信与讲稿
+### 观众登录与三档授信
 
 `wallet.html` 是观众入口，以游客为默认路径，GitHub 登录是可选的「换设备找回」。头像不请求第三方图床：48 张 DiceBear Notionists（CC0）放在 `web/public/avatars/`，按档案派生，见该目录 `README.txt`。
 

@@ -11,3 +11,6 @@ web/dist/
 Documents/
 提交稿.md
 *.tgz
+
+# Submission screenshots stay local; the upload lives on the event site.
+screenshots/

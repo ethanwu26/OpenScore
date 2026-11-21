@@ -42,9 +42,9 @@ function makeBatch(tier, count = 3) {
   const seen = new Set()
   for (let guard = 0; out.length < count && guard < 80; guard++) {
     const drawn = generateProfile(tier || tierOrder[Math.floor(Math.random() * tierOrder.length)])
-    const key = drawn.alias + drawn.role + drawn.agent
-    if (seen.has(key)) continue
-    seen.add(key)
+    // One alias per batch: three "阿林" side by side reads like a bug.
+    if (seen.has(drawn.alias)) continue
+    seen.add(drawn.alias)
     out.push(drawn)
   }
   return out
@@ -257,6 +257,7 @@ function RunScene({ card, agent, onSwipe, onNext }) {
   ]
   const n = useSequence(started, items.length)
   const done = started && n >= items.length
+  const [more, setMore] = useState(false)
   useEffect(() => { if (started) onSwipe() }, [started])
   return <Scene act="第四幕 · Agent 刷卡" title={`${agent.name} 开工了`}
     intro="这就是它工作时的样子：一边对话，一边为这次推理调用付钱。每一行工具调用都是链上真实发生的动作。">
@@ -266,12 +267,17 @@ function RunScene({ card, agent, onSwipe, onNext }) {
         <p className="order-eyebrow">本次调用</p>
         <h2>{agent.task}</h2>
         <div className="order-price"><strong>{money(price)}</strong><small> USD</small>{price < 10000 && <em>八折</em>}</div>
-        <dl className="ticket-lines">
+        <dl className="ticket-lines compact">
+          <dt>当前待还</dt><dd>{money(card.debt)} USD</dd>
+        </dl>
+        <button className="receipt-toggle" aria-expanded={more} onClick={() => setMore(v => !v)}>
+          {more ? '收起明细' : '查看明细'}
+        </button>
+        {more && <dl className="ticket-lines">
           <dt>商户将收</dt><dd>{money(price - fee)} USD</dd>
           <dt>资金池手续费 · 1%</dt><dd>{money(fee)} USD</dd>
-          <dt>当前待还</dt><dd>{money(card.debt)} USD</dd>
           <dt>模拟押金{card.debt ? '已锁定' : '可用'}</dt><dd>{money(deposit)} USD</dd>
-        </dl>
+        </dl>}
         {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>让 Agent 开始运行</button>}
         {started && !done && <p className="run-live" role="status"><i aria-hidden="true"/>交易进行中…</p>}
         {done && <button className="btn primary scene-cta" onClick={onNext}>下一步：按时还清 →</button>}
@@ -297,7 +303,9 @@ function RepayScene({ card, agent, onRepay, onNext }) {
   ]
   const n = useSequence(started, items.length)
   const done = started && n >= items.length
+  const [more, setMore] = useState(false)
   useEffect(() => { if (started) onRepay() }, [started])
+  useEffect(() => { if (done) setMore(true) }, [done])
   return <Scene act="第五幕 · 按时还清" title="账单还掉，分数自己会涨"
     intro="还款不由任何人打分：这一期记录写进行为账本，评分卡立刻重算，下一单的价格随之改变。">
     <div className="session-stage">
@@ -306,12 +314,18 @@ function RepayScene({ card, agent, onRepay, onNext }) {
         <p className="order-eyebrow">本期账单</p>
         <h2>{agent.name} · 待还</h2>
         <div className="order-price"><strong>{money(before.debt)}</strong><small> USD</small></div>
-        <dl className="ticket-lines">
+        <dl className="ticket-lines compact">
+          <dt>本期账单</dt><dd>{money(before.debt)} USD</dd>
+        </dl>
+        <button className="receipt-toggle" aria-expanded={more} onClick={() => setMore(v => !v)}>
+          {more ? '收起明细' : '查看明细'}
+        </button>
+        {more && <dl className="ticket-lines">
           <dt>锁定押金</dt><dd>{money(deposit)} USD</dd>
           <dt>还款后信用分</dt><dd>{scoreOf(after)} 分</dd>
           <dt>还款后额度</dt><dd>{money(limitOf(after))} USD</dd>
           <dt>下次报价</dt><dd>{money(priceOf(after))} USD</dd>
-        </dl>
+        </dl>}
         {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>按时还清 {money(before.debt)} USD</button>}
         {started && !done && <p className="run-live" role="status"><i aria-hidden="true"/>写入行为账本…</p>}
         {done && <button className="btn primary scene-cta" onClick={onNext}>看看这一单的结果 →</button>}

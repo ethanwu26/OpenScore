@@ -497,3 +497,9 @@ input { min-width:0; max-width:100%; }
   .intro-hero h1 {font-size:clamp(30px,7.2vw,40px);}
   .preview-price b {font-size:19px;}
 }
+
+/* Receipt: the conversation leads, the numbers wait behind a toggle. */
+.receipt-toggle {margin:2px 0 6px;padding:0;border:0;background:none;font:inherit;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+.receipt-toggle:hover {color:var(--good);}
+.ticket-lines.compact {margin-bottom:8px;}
+.ticket-lines.compact dd {font-size:17px;}

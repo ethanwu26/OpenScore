@@ -9,6 +9,23 @@ import './styles.css'
 const money = n => n.toLocaleString('en-US')
 const tierOrder = ['high','medium','low']
 
+// One task each; the identity page picks the person, this page picks who does the work.
+const AGENTS = [
+  { name: '构建助手', brief: '帮我审一下这次的提交，找出可能的空指针和边界问题。',
+    task: '为一次代码审查购买推理服务',
+    result: '审完了：3 处空指针风险，其中 2 处给了改法，1 处需要你确认业务语义。' },
+  { name: '文献助手', brief: '把这三篇论文压成一页要点，标明各自的实验条件。',
+    task: '为论文摘要购买推理服务',
+    result: '整理好了：三篇的方法差异在采样策略，实验条件已按数据集分开标注。' },
+  { name: '校对助手', brief: '校对这版稿件，标出错别字和语气前后不一致的地方。',
+    task: '为稿件校对购买推理服务',
+    result: '校对完了：7 处错别字、3 处语气不一致，修改建议附在文末。' },
+  { name: '原型助手', brief: '评审这版原型，按影响大小列出可用性问题。',
+    task: '为原型评审购买推理服务',
+    result: '评完了：2 个阻断级问题（找不到撤销入口、空状态没有下一步），5 条建议。' },
+]
+const agentOf = name => AGENTS.find(a => a.name === name) || AGENTS[0]
+
 async function api(path, data) {
   const res = await fetch('/api/audience/' + path, {
     cache:'no-store', method:data ? 'POST' : 'GET',
@@ -57,7 +74,7 @@ function Ticker({ value, ms = 800 }) {
   return <span className="ticker">{money(shown)}</span>
 }
 
-function useSequence(started, total, step = 620) {
+function useSequence(started, total, step = 700) {
   const [n, setN] = useState(0)
   useEffect(() => {
     if (!started) return
@@ -101,7 +118,6 @@ function CardFace({ profile, name, score, limit, id }) {
 function ProfileFacts({ profile, showHolder = true }) {
   return <dl className="profile-facts">
     {showHolder && <><dt>模拟持有人</dt><dd>{profile.alias} · {profile.role}</dd></>}
-    <dt>Agent 任务</dt><dd>{profile.task}</dd>
     <dt>模拟信用历史</dt><dd>{profile.months} 个月</dd>
     <dt>按时还款</dt><dd>{profile.paid} 期</dd>
     <dt>逾期记录</dt><dd>{profile.late} 次</dd>
@@ -109,8 +125,8 @@ function ProfileFacts({ profile, showHolder = true }) {
 }
 
 function IdentityScene({ batch, tier, onTier, onDraw, onPick, legacy, legacyKind, onLoadLegacy, busy }) {
-  return <Scene act="第一幕 · 认领身份" title="这三位候选，谁来做你的 Agent？"
-    intro="每个身份都带着自己的模拟信用记录和一张脸。选一个，下一步会拿到它的副卡。">
+  return <Scene act="第一幕 · 认领身份" title="先认领一个人，这张卡记在他名下"
+    intro="身份只决定一件事：这叠模拟还款记录和这张脸。选完再挑替这个人干活的 Agent。">
     {legacy && <p className="scene-note">{legacyKind === 'account' ? '这个账号上次用过的卡还在。' : '检测到一张旧版副卡。'}
       <button className="linkish" onClick={onLoadLegacy} disabled={busy}>{legacyKind === 'account' ? '载入这张卡继续' : '载入副本继续体验'}</button></p>}
     <div className="tier-row" role="group" aria-label="模拟记录档位">
@@ -123,27 +139,43 @@ function IdentityScene({ batch, tier, onTier, onDraw, onPick, legacy, legacyKind
       {batch.map(drawn => <article className="identity" key={drawn.alias + drawn.role + drawn.agent + drawn.months}>
         <div className="identity-avatar"><Portrait profile={drawn} size={92}/></div>
         <h2>{drawn.alias}<small>{drawn.role}</small></h2>
-        <p className="identity-agent">Agent「{drawn.agent}」<br/><span>{drawn.task}</span></p>
         <dl className="identity-facts">
           <div><dt>信用历史</dt><dd>{drawn.months} 个月</dd></div>
           <div><dt>按时还款</dt><dd>{drawn.paid} 期</dd></div>
           <div><dt>逾期</dt><dd className={drawn.late ? 'warn' : ''}>{drawn.late} 次</dd></div>
         </dl>
         <p className="identity-score">{baseScore(drawn)} 分 <small>预估额度 {money(baseScore(drawn) * deposit / 1000)} USD</small></p>
-        <button className="btn primary" onClick={() => onPick(drawn)} disabled={busy}>选这个身份</button>
+        <button className="btn primary" onClick={() => onPick(drawn)} disabled={busy}>认领这个身份</button>
       </article>)}
     </div>
   </Scene>
 }
 
-function GrantScene({ profile, name, setName, rebinding, busy, onIssue, onBack }) {
+function AgentScene({ profile, agent, onPick, onBack }) {
+  return <Scene act="第二幕 · 选择 Agent" title={`${profile.alias} 要派谁去花钱？`}
+    intro="同一个人，不同的 Agent 干不同的活。选一个，接下来会去看它拿到的卡和额度。">
+    <div className="agent-grid">
+      {AGENTS.map(option => <button key={option.name} className="agent-option" aria-pressed={agent.name === option.name}
+        onClick={() => onPick(option)}>
+        <span className="agent-option-name">{option.name}</span>
+        <span className="agent-option-task">{option.task}</span>
+        <span className="agent-option-line">“{option.brief}”</span>
+        <span className="agent-option-go" aria-hidden="true">选择它 →</span>
+      </button>)}
+    </div>
+    <button className="linkish scene-back" onClick={onBack}>返回换一个身份</button>
+  </Scene>
+}
+
+function GrantScene({ profile, agent, name, setName, rebinding, busy, onIssue, onBack }) {
   const score = baseScore(profile)
   const limit = score * deposit / 1000
-  return <Scene act="第二幕 · 核对授信" title="这张卡，能替 Agent 花多少？"
-    intro="额度不是主人随手设的上限，而是押金乘以分数。签发后，它就带着这份记录去刷卡。">
+  return <Scene act="第三幕 · 签发副卡" title="这张卡，能替它花多少？"
+    intro="额度不是主人随手设的上限，而是押金乘以分数。签发之后，它带着这份记录去刷卡。">
     <div className="grant-stage">
-      <CardFace profile={profile} name={name.trim() || profile.agent} score={score} limit={limit}/>
+      <CardFace profile={profile} name={name.trim() || agent.name} score={score} limit={limit}/>
       <div className="grant-copy">
+        <p className="grant-agent">{agent.name} · {agent.task}</p>
         <dl className="ticket-lines">
           <dt>模拟押金</dt><dd>{money(deposit)} USD</dd>
           <dt>信用分</dt><dd>{score} 分</dd>
@@ -156,7 +188,7 @@ function GrantScene({ profile, name, setName, rebinding, busy, onIssue, onBack }
         <button className="btn primary scene-cta" disabled={!name.trim() || busy} onClick={onIssue}>
           {rebinding ? '确认换绑并重新授信' : '签发这张卡'}
         </button>
-        <button className="linkish" onClick={onBack} disabled={busy}>换一个身份</button>
+        <button className="linkish" onClick={onBack} disabled={busy}>换一个 Agent</button>
         <details className="scene-details"><summary>押金和额度是怎么算的？</summary>
           <p><b>为什么要有押金：</b>链上没有身份也没有追偿，押金是这笔账唯一的担保。额度最多等于押金，逾期不还时押金被清算给资金池，出资人才不至于裸奔；按时还清则原路退回。</p>
           <p>观众体验由系统配发模拟押金，无需充值。真实测试网上，主人先把测试 USD 抵押给发卡合约，Agent 再签名预授权，允许资金池按合约规则支取；按时还清就全额退回，逾期未还才会被清算。</p>
@@ -167,75 +199,89 @@ function GrantScene({ profile, name, setName, rebinding, busy, onIssue, onBack }
   </Scene>
 }
 
-function RunScene({ card, onSwipe, onNext }) {
+/// The Agent's session view: messages and tool calls appear one by one while it works.
+function Transcript({ items, started, step = 850 }) {
+  const n = useSequence(started, items.length, step)
+  const shown = started ? n : 1
+  const done = started && n >= items.length
+  return <div className="session">
+    <div className="session-head"><i aria-hidden="true"/>Agent 会话 · {started ? (done ? '已完成' : '运行中') : '等待开始'}</div>
+    <ol className="transcript" aria-live="polite">
+      {items.slice(0, shown).map((item, i) => item.kind === 'tool'
+        ? <li className="msg tool" key={i}><span className="tool-name">{item.name}</span><span>{item.text}</span></li>
+        : <li className={`msg ${item.kind}`} key={i}><span className="msg-who">{item.who}</span><p>{item.text}</p></li>)}
+      {started && !done && <li className="msg typing" aria-label="Agent 正在处理"><i/><i/><i/></li>}
+    </ol>
+  </div>
+}
+
+function RunScene({ card, agent, onSwipe, onNext }) {
   // Freeze the numbers at scene entry: the swipe below is applied immediately, and the
-  // sentences must keep describing the moment the trade was quoted.
+  // transcript must keep describing the moment the trade was quoted.
   const snapshot = useRef(card).current
   const [started, setStarted] = useState(false)
   const score = scoreOf(snapshot)
   const price = priceOf(snapshot)
   const fee = price / 100
-  const task = snapshot.profile?.task || '为代码审查购买一次推理服务'
-  const steps = [
-    { k: 'Agent 接到任务', v: task },
-    { k: '商户请求报价', v: `服务标价 ${money(10000)} USD，商户向资金池询问这张卡的价格` },
-    { k: '资金池读账本、调评分卡', v: `行为账本给出 ${score} 分` },
-    { k: '额度校验', v: `可用额度 ${money(limitOf(snapshot) - snapshot.debt)} USD ≥ 本次报价 ${money(price)} USD，放行` },
-    { k: '商户当场收款', v: `商户到账 ${money(price - fee)} USD，${money(fee)} 手续费留在资金池` },
+  const limit = limitOf(snapshot) - snapshot.debt
+  const items = [
+    { kind: 'user', who: '主人', text: agent.brief },
+    { kind: 'agent', who: agent.name, text: '要读完这次上下文，需要一次推理调用。先确认这张卡付得起。' },
+    { kind: 'tool', name: 'CreditShop.checkout', text: `报价 ${money(price)} USD（${score} 分${price < 10000 ? '，已过 600 分八折线' : '，未到 600 分八折线'}）` },
+    { kind: 'tool', name: 'CreditPool.swipe', text: `算分 ${score}，额度 ${money(limit)} ≥ ${money(price)}，放行；记账 ${money(price)} USD` },
+    { kind: 'tool', name: 'CreditPool', text: `商户到账 ${money(price - fee)}，手续费 ${money(fee)} 留给出资人` },
+    { kind: 'agent', who: agent.name, text: agent.result },
   ]
-  const n = useSequence(started, steps.length)
-  const done = started && n >= steps.length
-  useEffect(() => {
-    if (started) onSwipe()
-  }, [started])
-  return <Scene act="第三幕 · 刷卡买服务" title={`${snapshot.name} 要买一次推理服务`}
-    intro="一次刷卡就是一笔交易：商户读分报价，资金池算额度并付款，欠款记在 Agent 名下。">
-    <div className="run-stage">
+  const n = useSequence(started, items.length)
+  const done = started && n >= items.length
+  useEffect(() => { if (started) onSwipe() }, [started])
+  return <Scene act="第四幕 · Agent 刷卡" title={`${agent.name} 开工了`}
+    intro="这就是它工作时的样子：一边对话，一边为这次推理调用付钱。每一行工具调用都是链上真实发生的动作。">
+    <div className="session-stage">
+      <Transcript items={items} started={started}/>
       <div className="order-card">
         <p className="order-eyebrow">本次调用</p>
-        <h2>{task}</h2>
+        <h2>{agent.task}</h2>
         <div className="order-price"><strong>{money(price)}</strong><small> USD</small>{price < 10000 && <em>八折</em>}</div>
         <dl className="ticket-lines">
           <dt>商户将收</dt><dd>{money(price - fee)} USD</dd>
           <dt>资金池手续费 · 1%</dt><dd>{money(fee)} USD</dd>
-          <dt>当前待还</dt><dd>{money(snapshot.debt)} USD</dd>
-          <dt>模拟押金{snapshot.debt ? '已锁定' : '可用'}</dt><dd>{money(deposit)} USD</dd>
+          <dt>当前待还</dt><dd>{money(card.debt)} USD</dd>
+          <dt>模拟押金{card.debt ? '已锁定' : '可用'}</dt><dd>{money(deposit)} USD</dd>
         </dl>
-        {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>开始这次调用</button>}
+        {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>让 Agent 开始运行</button>}
         {started && !done && <p className="run-live" role="status"><i aria-hidden="true"/>交易进行中…</p>}
+        {done && <button className="btn primary scene-cta" onClick={onNext}>下一步：按时还清 →</button>}
       </div>
-      {started && <ol className="sequence" aria-live="polite">
-        {steps.map((s, i) => <li key={s.k} className={i < n ? 'on' : ''}>
-          <b>{s.k}</b><span>{s.v}</span>
-        </li>)}
-      </ol>}
     </div>
     {done && <div className="scene-next">
-      <p><b>商户已经收到钱。</b>这笔 {money(snapshot.debt || price)} USD 的账单现在挂在 {snapshot.name} 名下，押金 {money(deposit)} USD 被锁定。</p>
-      <button className="btn primary" onClick={onNext}>下一步：按时还清 →</button>
+      <p><b>商户已经收到钱。</b>这笔 {money(price)} USD 的账单挂在 {agent.name} 名下，押金 {money(deposit)} USD 被锁定。</p>
     </div>}
   </Scene>
 }
 
-function RepayScene({ card, onRepay, onNext }) {
+function RepayScene({ card, agent, onRepay, onNext }) {
   const before = useRef(card).current
   const after = useRef(card.debt ? changeCard(card, 'repay') : card).current
   const [started, setStarted] = useState(false)
-  const steps = [
-    { k: '资金池收到还款', v: `${money(before.debt)} USD 到账，押金 ${money(deposit)} USD 解除锁定` },
-    { k: '行为账本记下这一期', v: `应还 ${money(before.debt)}，实还 ${money(before.debt)}，按时` },
-    { k: '评分卡按新记录重算', v: `${scoreOf(before)} 分 → ${scoreOf(after)} 分` },
-    { k: '额度与报价跟着变', v: `额度 ${money(limitOf(before))} → ${money(limitOf(after))} USD；同类服务 ${money(priceOf(before))} → ${money(priceOf(after))} USD` },
+  const items = [
+    { kind: 'agent', who: agent.name, text: `任务完成了，账单 ${money(before.debt)} USD 记在我名下。` },
+    { kind: 'user', who: '主人', text: '按时还清。' },
+    { kind: 'tool', name: 'CreditPool.repay', text: `还款 ${money(before.debt)} USD，押金 ${money(deposit)} 解除锁定` },
+    { kind: 'tool', name: 'BehaviorBook.record', text: `第 1 期：应还 ${money(before.debt)}，实还 ${money(before.debt)}，按时` },
+    { kind: 'tool', name: 'ScoreCard', text: `${scoreOf(before)} 分 → ${scoreOf(after)} 分；额度 ${money(limitOf(before))} → ${money(limitOf(after))} USD` },
+    { kind: 'agent', who: agent.name, text: `还清了。下一单同类服务 ${money(priceOf(after))} USD${priceOf(after) < priceOf(before) ? '，八折生效。' : '。'}` },
   ]
-  const n = useSequence(started, steps.length)
-  const done = started && n >= steps.length
+  const n = useSequence(started, items.length)
+  const done = started && n >= items.length
   useEffect(() => { if (started) onRepay() }, [started])
-  return <Scene act="第四幕 · 按时还清" title="把账单还掉，分数自己会涨"
+  return <Scene act="第五幕 · 按时还清" title="账单还掉，分数自己会涨"
     intro="还款不由任何人打分：这一期记录写进行为账本，评分卡立刻重算，下一单的价格随之改变。">
-    <div className="run-stage">
+    <div className="session-stage">
+      <Transcript items={items} started={started}/>
       <div className="order-card statement">
         <p className="order-eyebrow">本期账单</p>
-        <h2>{card.name} · 待还</h2>
+        <h2>{agent.name} · 待还</h2>
         <div className="order-price"><strong>{money(before.debt)}</strong><small> USD</small></div>
         <dl className="ticket-lines">
           <dt>锁定押金</dt><dd>{money(deposit)} USD</dd>
@@ -245,13 +291,11 @@ function RepayScene({ card, onRepay, onNext }) {
         </dl>
         {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>按时还清 {money(before.debt)} USD</button>}
         {started && !done && <p className="run-live" role="status"><i aria-hidden="true"/>写入行为账本…</p>}
+        {done && <button className="btn primary scene-cta" onClick={onNext}>看看这一单的结果 →</button>}
       </div>
-      {started && <ol className="sequence" aria-live="polite">{steps.map((s, i) =>
-        <li key={s.k} className={i < n ? 'on' : ''}><b>{s.k}</b><span>{s.v}</span></li>)}</ol>}
     </div>
     {done && <div className="scene-next">
       <p><b>账单清了，押金回来了。</b>{priceOf(after) < priceOf(before) ? '这次还款跨过了 600 分门槛，同一项服务从下一单起打八折。' : '记录继续累积，下一单会更便宜。'}</p>
-      <button className="btn primary" onClick={onNext}>看看这一单的结果 →</button>
     </div>}
   </Scene>
 }
@@ -275,7 +319,7 @@ function ShareCard() {
   </section>
 }
 
-function DoneScene({ card, onAgain, onRebind }) {
+function DoneScene({ card, agent, onAgain, onRebind }) {
   const previous = card.repayments > 0 && !card.debt ? { ...card, repayments: card.repayments - 1 } : null
   const saved = previous ? priceOf(previous) - priceOf(card) : 0
   return <Scene act="收尾 · 这一单留下了什么" title={saved > 0 ? `同一项服务，现在便宜 ${money(saved)} USD` : '这一单已经记进账本'}
@@ -283,6 +327,7 @@ function DoneScene({ card, onAgain, onRebind }) {
     <div className="done-stage">
       <CardFace profile={card.profile} name={card.name} score={scoreOf(card)} limit={limitOf(card) - card.debt} id={card.id}/>
       <div className="done-copy">
+        <p className="grant-agent">{agent.name} · {agent.task}</p>
         {previous ? <dl className="ticket-lines">
           <dt>信用分</dt><dd>{scoreOf(previous)} → {scoreOf(card)}</dd>
           <dt>授信额度</dt><dd>{money(limitOf(previous))} → {money(limitOf(card))} USD</dd>
@@ -290,7 +335,7 @@ function DoneScene({ card, onAgain, onRebind }) {
           <dt>累计按时还款</dt><dd>{card.repayments} 期</dd>
         </dl> : <p>这张卡还没有还款记录。</p>}
         <div className="done-actions">
-          <button className="btn primary" onClick={onAgain}>用这张卡再买一单</button>
+          <button className="btn primary" onClick={onAgain}>让 {agent.name} 再买一单</button>
           <button className="btn ghost" onClick={onRebind}>换一份档案重新授信</button>
         </div>
         {card.profile && <details className="scene-details"><summary>已绑定的模拟档案 · {card.profile.alias} · {tierNames[card.profile.tier]}信用</summary>
@@ -313,7 +358,8 @@ function Experience({ user, legacyCard, leave, busy, authError }) {
   const [tier, setTier] = useState(null)
   const [batch, setBatch] = useState(first)
   const [profile, setProfile] = useState(first[0])
-  const [name, setName] = useState(first[0].agent)
+  const [agent, setAgent] = useState(() => agentOf(first[0].agent))
+  const [name, setName] = useState(() => agentOf(first[0].agent).name)
   const [error, setError] = useState('')
   const [confirmLeave, setConfirmLeave] = useState(false)
   useEffect(() => {
@@ -324,13 +370,15 @@ function Experience({ user, legacyCard, leave, busy, authError }) {
   }, [user])
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
-    const names = { identity: '认领身份', grant: '核对授信', run: '刷卡买服务', repay: '按时还清', done: '这一单的结果' }
+    const names = { identity: '认领身份', agent: '选择 Agent', grant: '签发副卡', run: 'Agent 刷卡', repay: '按时还清', done: '这一单的结果' }
     document.title = `${names[scene] || '体验'} · 明码分 OpenScore`
   }, [scene])
   function pick(drawn) {
+    const next = agentOf(drawn.agent)
     setProfile(drawn)
-    setName(current => (current === profile.agent || !current.trim()) ? drawn.agent : current)
-    setScene('grant')
+    setAgent(next)
+    setName(current => (current === profile.agent || !current.trim() ? next.name : current))
+    setScene('agent')
   }
   function draw(nextTier) {
     const next = makeBatch(nextTier ?? tier)
@@ -348,6 +396,7 @@ function Experience({ user, legacyCard, leave, busy, authError }) {
   }
   const loadLegacy = saved => {
     setCard(saved)
+    setAgent(agentOf(saved.name))
     setScene('done')
     setTier(null)
   }
@@ -379,14 +428,15 @@ function Experience({ user, legacyCard, leave, busy, authError }) {
       {scene === 'identity' && <IdentityScene batch={batch} tier={tier} onTier={k => draw(k)} onDraw={() => draw()}
         onPick={pick} legacy={card ? null : old} legacyKind={user ? 'account' : 'legacy'}
         onLoadLegacy={() => loadLegacy(old)} busy={busy}/>}
-      {scene === 'grant' && (rebinding && card
-        ? <p className="rebind-note">确认后按新档案重新授信，保留本次卡号和用卡记录。<button className="linkish" onClick={() => setScene('done')}>保留当前授信</button></p>
-        : null)}
-      {scene === 'grant' && <GrantScene profile={profile} name={name} setName={setName} rebinding={rebinding && Boolean(card)}
-        busy={busy} onIssue={issue} onBack={() => setScene(rebinding && card ? 'done' : 'identity')}/>}
-      {scene === 'run' && card && <RunScene card={card} onSwipe={() => act('swipe')} onNext={() => setScene('repay')}/>}
-      {scene === 'repay' && card && <RepayScene card={card} onRepay={() => act('repay')} onNext={() => setScene('done')}/>}
-      {scene === 'done' && card && <DoneScene card={card} onAgain={() => setScene('run')}
+      {scene === 'agent' && <AgentScene profile={profile} agent={agent}
+        onPick={option => { setAgent(option); setName(current => (current === agent.name || !current.trim() ? option.name : current)); setScene('grant') }}
+        onBack={() => setScene(rebinding && card ? 'done' : 'identity')}/>}
+      {scene === 'grant' && <GrantScene profile={profile} agent={agent} name={name} setName={setName}
+        rebinding={rebinding && Boolean(card)} busy={busy} onIssue={issue}
+        onBack={() => setScene('agent')}/>}
+      {scene === 'run' && card && <RunScene card={card} agent={agent} onSwipe={() => act('swipe')} onNext={() => setScene('repay')}/>}
+      {scene === 'repay' && card && <RepayScene card={card} agent={agent} onRepay={() => act('repay')} onNext={() => setScene('done')}/>}
+      {scene === 'done' && card && <DoneScene card={card} agent={agent} onAgain={() => setScene('run')}
         onRebind={() => { setRebinding(true); setScene('identity'); draw('high') }}/>}
     </main>
   </div>

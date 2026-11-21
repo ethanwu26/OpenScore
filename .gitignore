@@ -10,7 +10,13 @@ web/dist/
 # Local working notes, upload copies and backups stay out of the public repository.
 Documents/
 提交稿.md
+提交-粘贴版.txt
+提交稿.html
 *.tgz
 
 # Submission screenshots stay local; the upload lives on the event site.
 screenshots/
+
+# The demo deck is a presentation asset, kept out of the code repository.
+明码分-演示.pptx
+明码分-演示.pdf

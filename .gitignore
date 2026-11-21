@@ -1,0 +1,13 @@
+node_modules/
+.env
+deployments/demo-keys.*.json
+contracts/out/
+contracts/cache/
+contracts/lib/
+web/dist/
+.DS_Store
+
+# Local working notes, upload copies and backups stay out of the public repository.
+Documents/
+提交稿.md
+*.tgz

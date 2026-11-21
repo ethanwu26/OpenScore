@@ -1,0 +1,19 @@
+{
+  "name": "openscore",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "明码分 OpenScore — 给 AI Agent 的链上信用副卡",
+  "scripts": {
+    "artifacts": "node scripts/build-artifacts.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "seed": "node scripts/seed.mjs",
+    "bench": "node scripts/bench.mjs",
+    "status": "node scripts/status.mjs",
+    "web": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  }
+}

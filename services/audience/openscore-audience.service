@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenScore audience sign-in and simulated credit accounts
+After=network.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=openscore-audience
+StateDirectoryMode=0700
+WorkingDirectory=/opt/openscore-audience
+EnvironmentFile=-/etc/openscore-audience/oauth.env
+EnvironmentFile=-/etc/openscore-audience/admin.env
+ExecStart=/usr/local/bin/node /opt/openscore-audience/services/audience/server.mjs
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

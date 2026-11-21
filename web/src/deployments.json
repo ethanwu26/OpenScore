@@ -1,0 +1,41 @@
+{
+  "tusd": "0xceaee9e47a26bb481acae90514519d8e00ec6c14",
+  "registry": "0x1216e93c47dd8a11a05519ad6b65bfe2c7382d27",
+  "scoreCard": "0x0bcf08544c511527f0b4bad448ca1d23b8666aff",
+  "scoreCardAlt": "0xcea75a98533ce002d2f59ca5b2ad095a9c971c53",
+  "neural": "0x1f32d70cec3089c60afb18586b266012b9b60e29",
+  "scoreCardId": 0,
+  "neuralId": 1,
+  "book": "0x1c39e4985c3797d50561969838357a62f4155ab6",
+  "pool": "0x13da2e62b64a67c96f0860b2a2a30e37bdaa776e",
+  "bookBound": true,
+  "card": "0xc7906d8759db3d8ec18c9071988bebac2d7f0ae9",
+  "merchant": "0x29384165e154A1348aaAB144BD990DfC2EB18Ced",
+  "shop": "0x065c3a3956e97a63aefb31d6449570ed21e2aabd",
+  "lens": "0x4f7d466a52273ae0449eb5f23fb18c711abf79ee",
+  "decoyBook": "0xef1cda5511958ad9a73c9f6ae7ec569d665cc316",
+  "decoyPool": "0xb523b98a530a4e528a3f09c6e20455cb778cdf8d",
+  "decoyBound": true,
+  "decoyArmed": true,
+  "bench": "0x2be4e7eb08eb43f122a61f01742c47860ee524bb",
+  "liquidity": true,
+  "deployer": "0x72d7847705F6FA326ec51fBa5D411604747E7F2c",
+  "collateral": "100000000000000000000000",
+  "chainId": 10143,
+  "rpcUrl": "https://testnet-rpc.monad.xyz",
+  "explorer": "https://testnet.monadscan.com",
+  "benchRun": {
+    "dense": {
+      "n": 10000,
+      "gas": 871068,
+      "tx": "0x6e253b8ed904d6a681b03b6cac4d5cd099f4cc44bd3cdb59c9ccd6b3ccc185c2",
+      "estimate": 914109
+    },
+    "scattered": {
+      "n": 300,
+      "gas": 3320449,
+      "tx": "0xf9bb29533bcbf1c23322a9a23247ae0c76267afa6ecfe47e1faceabe8f3d51b1",
+      "estimate": 3382972
+    }
+  }
+}

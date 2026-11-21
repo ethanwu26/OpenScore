@@ -22,8 +22,8 @@ contract DecoyPool is CreditPool {
 
     event Armed(uint256 round, uint32 id);
 
-    constructor(address _tusd, address _book, address _registry, address _decoy)
-        CreditPool(_tusd, _book, _registry, type(uint32).max)
+    constructor(address _usd, address _book, address _registry, address _decoy)
+        CreditPool(_usd, _book, _registry, type(uint32).max)
     {
         decoy = _decoy;
     }

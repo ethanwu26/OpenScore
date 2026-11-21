@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const NAMES = [
-  'MockTUSD', 'ModelRegistry', 'ScoreCard', 'ScoreCardAlt', 'RiskModel', 'BehaviorBook',
+  'MockUSD', 'ModelRegistry', 'ScoreCard', 'ScoreCardAlt', 'RiskModel', 'BehaviorBook',
   'CreditPool', 'AgentCard', 'CreditShop', 'OpenScoreLens', 'DecoyPool', 'Bench',
 ]
 const out = {}

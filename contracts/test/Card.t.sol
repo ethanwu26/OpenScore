@@ -7,7 +7,7 @@ import {RiskModel} from "../src/RiskModel.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {BehaviorBook} from "../src/BehaviorBook.sol";
 import {CreditPool} from "../src/CreditPool.sol";
-import {MockTUSD} from "../src/MockTUSD.sol";
+import {MockUSD} from "../src/MockUSD.sol";
 import {AgentCard} from "../src/AgentCard.sol";
 import {CreditShop} from "../src/CreditShop.sol";
 import {OpenScoreLens} from "../src/OpenScoreLens.sol";
@@ -27,7 +27,7 @@ interface Vm {
 contract CardTest {
     Vm constant vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
-    MockTUSD token;
+    MockUSD token;
     ModelRegistry registry;
     ScoreCard cardModel;
     ScoreCardAlt altModel;
@@ -70,7 +70,7 @@ contract CardTest {
 
     function setUp() public {
         vm.warp(1_800_000_000);
-        token = new MockTUSD();
+        token = new MockUSD();
         registry = new ModelRegistry();
         cardModel = new ScoreCard();
         altModel = new ScoreCardAlt();

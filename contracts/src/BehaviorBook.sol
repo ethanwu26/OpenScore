@@ -23,7 +23,7 @@ contract BehaviorBook {
         uint32 periods;
         uint128 owedTotal;
         uint128 paidTotal;
-        uint128 limit; // credit line used for utilisation, in tUSD units
+        uint128 limit; // credit line used for utilisation, in USD units
         uint32 defaults; // liquidations, never decays with the ring
         uint64 lastDefault;
         Ring ring;
@@ -149,7 +149,7 @@ contract BehaviorBook {
             if (ageDays > 3650) ageDays = 3650;
         }
         f[0] = int256(ageDays);
-        // f1 locked collateral, in the model's unit (1 = 100 tUSD), capped at the
+        // f1 locked collateral, in the model's unit (1 = 100 USD), capped at the
         // training range so an outlier cannot push the score around.
         uint256 col = uint256(collateral) / 100e18;
         f[1] = int256(col > 10000 ? 10000 : col);

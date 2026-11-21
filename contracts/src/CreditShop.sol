@@ -13,7 +13,7 @@ interface IPoolQuote {
 /// @notice The merchant is paid in full at once; the price depends on the agent's score.
 ///         This is the "any contract can call the score" half of the loop.
 contract CreditShop {
-    IERC20Pay public immutable tusd;
+    IERC20Pay public immutable usd;
     IPoolQuote public immutable pool;
     address public immutable merchant;
     uint128 public immutable refCollateral;   // collateral used when asking for the score
@@ -29,8 +29,8 @@ contract CreditShop {
 
     uint256 public purchases;
 
-    constructor(address _tusd, address _pool, address _merchant, uint128 _refCollateral, uint256 _basePrice) {
-        tusd = IERC20Pay(_tusd);
+    constructor(address _usd, address _pool, address _merchant, uint128 _refCollateral, uint256 _basePrice) {
+        usd = IERC20Pay(_usd);
         pool = IPoolQuote(_pool);
         merchant = _merchant;
         refCollateral = _refCollateral;
@@ -59,7 +59,7 @@ contract CreditShop {
         uint16 score;
         (score, price) = priceFor(msg.sender);
         if (score < MIN_SCORE) revert ScoreTooLow(score);
-        require(tusd.transferFrom(msg.sender, merchant, price), "PAY");
+        require(usd.transferFrom(msg.sender, merchant, price), "PAY");
         purchases += 1;
         emit Purchased(msg.sender, score, price, purchases);
     }

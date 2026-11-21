@@ -68,7 +68,7 @@ export function Tx({ hash, children }) {
 export function describe(events) {
   const out = []
   for (const { name, args: a } of events || []) {
-    if (name === 'Purchased') out.push(`商户读到 ${a.score} 分，报价 ${fmt(a.price)} tUSD`)
+    if (name === 'Purchased') out.push(`商户读到 ${a.score} 分，报价 ${fmt(a.price)} USD`)
     else if (name === 'Scored') out.push(`资金池在同一笔交易里算分：${a.score} 分，额度 ${fmt(a.limit)}`)
     else if (name === 'Swiped') out.push(`商户到账 ${fmt(a.price - a.interchange)}，另有 ${fmt(a.interchange)} 手续费留给出资人`)
     else if (name === 'Borrowed') out.push(`欠款 ${fmt(a.amount)} 记到 Agent 名下，锁定押金 ${fmt(a.collateral)}`)

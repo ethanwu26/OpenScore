@@ -50,7 +50,7 @@ contract CreditPool {
         bool closed;
     }
 
-    IERC20Like public immutable tusd;
+    IERC20Like public immutable usd;
     IBook public immutable book;
     IRegistry public registry;
     uint32 public modelId;
@@ -101,8 +101,8 @@ contract CreditPool {
     error ModelsDisagree(uint16 a, uint16 b);
     error BadAmount();
 
-    constructor(address _tusd, address _book, address _registry, uint32 _modelId) {
-        tusd = IERC20Like(_tusd);
+    constructor(address _usd, address _book, address _registry, uint32 _modelId) {
+        usd = IERC20Like(_usd);
         book = IBook(_book);
         registry = IRegistry(_registry);
         modelId = _modelId;
@@ -178,7 +178,7 @@ contract CreditPool {
     }
 
     function deposit(uint256 amount) external {
-        require(tusd.transferFrom(msg.sender, address(this), amount), "TRANSFER");
+        require(usd.transferFrom(msg.sender, address(this), amount), "TRANSFER");
         liquidity += amount;
         depositOf[msg.sender] += amount;
         emit LiquidityChanged(msg.sender, int256(amount), liquidity);
@@ -189,7 +189,7 @@ contract CreditPool {
         if (amount > liquidity || amount > depositOf[msg.sender]) revert NoLiquidity();
         depositOf[msg.sender] -= amount;
         liquidity -= amount;
-        require(tusd.transfer(msg.sender, amount), "TRANSFER");
+        require(usd.transfer(msg.sender, amount), "TRANSFER");
         emit LiquidityChanged(msg.sender, -int256(amount), liquidity);
     }
 
@@ -227,17 +227,17 @@ contract CreditPool {
 
         book.touch(borrower);
         book.setLimit(borrower, collateral);
-        require(tusd.transferFrom(borrower, address(this), collateral), "COLLATERAL");
+        require(usd.transferFrom(borrower, address(this), collateral), "COLLATERAL");
         liquidity -= uint256(amount) + fee - cut;
         outstanding += amount;
         earned += cut;
-        require(tusd.transfer(payTo, amount - cut), "TRANSFER");
+        require(usd.transfer(payTo, amount - cut), "TRANSFER");
         if (fee > 0) {
             uint96 f1 = registry.feeOf(modelId);
-            if (f1 > 0) require(tusd.transfer(registry.authorOf(modelId), f1), "FEE");
+            if (f1 > 0) require(usd.transfer(registry.authorOf(modelId), f1), "FEE");
             if (dualEnabled) {
                 uint96 f2 = fee - f1;
-                if (f2 > 0) require(tusd.transfer(registry.authorOf(modelId2), f2), "FEE2");
+                if (f2 > 0) require(usd.transfer(registry.authorOf(modelId2), f2), "FEE2");
             }
         }
 
@@ -262,7 +262,7 @@ contract CreditPool {
         uint8 delay = block.timestamp > l.due ? 1 : 0;
         l.principal -= amount;
         book.record(msg.sender, amount, amount, delay);
-        require(tusd.transferFrom(msg.sender, address(this), amount), "TRANSFER");
+        require(usd.transferFrom(msg.sender, address(this), amount), "TRANSFER");
         liquidity += amount;
         outstanding -= amount;
         emit Repaid(id, amount, l.principal);
@@ -271,7 +271,7 @@ contract CreditPool {
         if (l.principal == 0) {
             l.closed = true;
             uint128 col = l.collateral;
-            require(tusd.transfer(msg.sender, col), "COLLATERAL");
+            require(usd.transfer(msg.sender, col), "COLLATERAL");
             emit CollateralReturned(id, msg.sender, col);
         }
     }

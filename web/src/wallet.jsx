@@ -93,7 +93,7 @@ function CardFace({ profile, name, score, limit, id }) {
       <div><b>{name}</b><small>{profile.alias} · {profile.role} · {tierNames[profile.tier]}信用</small></div>
     </div>
     <div className="sample-score"><Ticker value={score} /><small>分</small></div>
-    <div className="sample-limit"><span>可用额度</span><b>{money(limit)} <small>tUSD</small></b></div>
+    <div className="sample-limit"><span>可用额度</span><b>{money(limit)} <small>USD</small></b></div>
     {id ? <div className="guest-id">{id}</div> : <div className="guest-id">按还款记录升降额度</div>}
   </section>
 }
@@ -129,7 +129,7 @@ function IdentityScene({ batch, tier, onTier, onDraw, onPick, legacy, legacyKind
           <div><dt>按时还款</dt><dd>{drawn.paid} 期</dd></div>
           <div><dt>逾期</dt><dd className={drawn.late ? 'warn' : ''}>{drawn.late} 次</dd></div>
         </dl>
-        <p className="identity-score">{baseScore(drawn)} 分 <small>预估额度 {money(baseScore(drawn) * deposit / 1000)} tUSD</small></p>
+        <p className="identity-score">{baseScore(drawn)} 分 <small>预估额度 {money(baseScore(drawn) * deposit / 1000)} USD</small></p>
         <button className="btn primary" onClick={() => onPick(drawn)} disabled={busy}>选这个身份</button>
       </article>)}
     </div>
@@ -145,10 +145,10 @@ function GrantScene({ profile, name, setName, rebinding, busy, onIssue, onBack }
       <CardFace profile={profile} name={name.trim() || profile.agent} score={score} limit={limit}/>
       <div className="grant-copy">
         <dl className="ticket-lines">
-          <dt>模拟押金</dt><dd>{money(deposit)} tUSD</dd>
+          <dt>模拟押金</dt><dd>{money(deposit)} USD</dd>
           <dt>信用分</dt><dd>{score} 分</dd>
-          <dt>额度 = 押金 × 分数 ÷ 1,000</dt><dd>{money(limit)} tUSD</dd>
-          <dt>绑定时锁定</dt><dd>0 tUSD</dd>
+          <dt>额度 = 押金 × 分数 ÷ 1,000</dt><dd>{money(limit)} USD</dd>
+          <dt>绑定时锁定</dt><dd>0 USD</dd>
         </dl>
         <label className="agent-input">Agent 昵称
           <input value={name} onChange={e => setName(e.target.value)} maxLength={24} required />
@@ -158,7 +158,8 @@ function GrantScene({ profile, name, setName, rebinding, busy, onIssue, onBack }
         </button>
         <button className="linkish" onClick={onBack} disabled={busy}>换一个身份</button>
         <details className="scene-details"><summary>押金和额度是怎么算的？</summary>
-          <p>观众体验由系统配发模拟押金，无需充值。真实测试网上，主人先把测试 tUSD 抵押给发卡合约，Agent 再签名预授权，允许资金池按合约规则支取；按时还清就全额退回，逾期未还才会被清算。</p>
+          <p><b>为什么要有押金：</b>链上没有身份也没有追偿，押金是这笔账唯一的担保。额度最多等于押金，逾期不还时押金被清算给资金池，出资人才不至于裸奔；按时还清则原路退回。</p>
+          <p>观众体验由系统配发模拟押金，无需充值。真实测试网上，主人先把测试 USD 抵押给发卡合约，Agent 再签名预授权，允许资金池按合约规则支取；按时还清就全额退回，逾期未还才会被清算。</p>
           <p>起点 300 分，每月信用历史加 6 分，每期按时还款加 12 分，每次逾期扣 30 分，最低 250 分。</p>
         </details>
       </div>
@@ -177,10 +178,10 @@ function RunScene({ card, onSwipe, onNext }) {
   const task = snapshot.profile?.task || '为代码审查购买一次推理服务'
   const steps = [
     { k: 'Agent 接到任务', v: task },
-    { k: '商户请求报价', v: `服务标价 ${money(10000)} tUSD，商户向资金池询问这张卡的价格` },
+    { k: '商户请求报价', v: `服务标价 ${money(10000)} USD，商户向资金池询问这张卡的价格` },
     { k: '资金池读账本、调评分卡', v: `行为账本给出 ${score} 分` },
-    { k: '额度校验', v: `可用额度 ${money(limitOf(snapshot) - snapshot.debt)} tUSD ≥ 本次报价 ${money(price)} tUSD，放行` },
-    { k: '商户当场收款', v: `商户到账 ${money(price - fee)} tUSD，${money(fee)} 手续费留在资金池` },
+    { k: '额度校验', v: `可用额度 ${money(limitOf(snapshot) - snapshot.debt)} USD ≥ 本次报价 ${money(price)} USD，放行` },
+    { k: '商户当场收款', v: `商户到账 ${money(price - fee)} USD，${money(fee)} 手续费留在资金池` },
   ]
   const n = useSequence(started, steps.length)
   const done = started && n >= steps.length
@@ -193,12 +194,12 @@ function RunScene({ card, onSwipe, onNext }) {
       <div className="order-card">
         <p className="order-eyebrow">本次调用</p>
         <h2>{task}</h2>
-        <div className="order-price"><strong>{money(price)}</strong><small> tUSD</small>{price < 10000 && <em>八折</em>}</div>
+        <div className="order-price"><strong>{money(price)}</strong><small> USD</small>{price < 10000 && <em>八折</em>}</div>
         <dl className="ticket-lines">
-          <dt>商户将收</dt><dd>{money(price - fee)} tUSD</dd>
-          <dt>资金池手续费 · 1%</dt><dd>{money(fee)} tUSD</dd>
-          <dt>当前待还</dt><dd>{money(snapshot.debt)} tUSD</dd>
-          <dt>模拟押金{snapshot.debt ? '已锁定' : '可用'}</dt><dd>{money(deposit)} tUSD</dd>
+          <dt>商户将收</dt><dd>{money(price - fee)} USD</dd>
+          <dt>资金池手续费 · 1%</dt><dd>{money(fee)} USD</dd>
+          <dt>当前待还</dt><dd>{money(snapshot.debt)} USD</dd>
+          <dt>模拟押金{snapshot.debt ? '已锁定' : '可用'}</dt><dd>{money(deposit)} USD</dd>
         </dl>
         {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>开始这次调用</button>}
         {started && !done && <p className="run-live" role="status"><i aria-hidden="true"/>交易进行中…</p>}
@@ -210,7 +211,7 @@ function RunScene({ card, onSwipe, onNext }) {
       </ol>}
     </div>
     {done && <div className="scene-next">
-      <p><b>商户已经收到钱。</b>这笔 {money(snapshot.debt || price)} tUSD 的账单现在挂在 {snapshot.name} 名下，押金 {money(deposit)} tUSD 被锁定。</p>
+      <p><b>商户已经收到钱。</b>这笔 {money(snapshot.debt || price)} USD 的账单现在挂在 {snapshot.name} 名下，押金 {money(deposit)} USD 被锁定。</p>
       <button className="btn primary" onClick={onNext}>下一步：按时还清 →</button>
     </div>}
   </Scene>
@@ -221,10 +222,10 @@ function RepayScene({ card, onRepay, onNext }) {
   const after = useRef(card.debt ? changeCard(card, 'repay') : card).current
   const [started, setStarted] = useState(false)
   const steps = [
-    { k: '资金池收到还款', v: `${money(before.debt)} tUSD 到账，押金 ${money(deposit)} tUSD 解除锁定` },
+    { k: '资金池收到还款', v: `${money(before.debt)} USD 到账，押金 ${money(deposit)} USD 解除锁定` },
     { k: '行为账本记下这一期', v: `应还 ${money(before.debt)}，实还 ${money(before.debt)}，按时` },
     { k: '评分卡按新记录重算', v: `${scoreOf(before)} 分 → ${scoreOf(after)} 分` },
-    { k: '额度与报价跟着变', v: `额度 ${money(limitOf(before))} → ${money(limitOf(after))} tUSD；同类服务 ${money(priceOf(before))} → ${money(priceOf(after))} tUSD` },
+    { k: '额度与报价跟着变', v: `额度 ${money(limitOf(before))} → ${money(limitOf(after))} USD；同类服务 ${money(priceOf(before))} → ${money(priceOf(after))} USD` },
   ]
   const n = useSequence(started, steps.length)
   const done = started && n >= steps.length
@@ -235,14 +236,14 @@ function RepayScene({ card, onRepay, onNext }) {
       <div className="order-card statement">
         <p className="order-eyebrow">本期账单</p>
         <h2>{card.name} · 待还</h2>
-        <div className="order-price"><strong>{money(before.debt)}</strong><small> tUSD</small></div>
+        <div className="order-price"><strong>{money(before.debt)}</strong><small> USD</small></div>
         <dl className="ticket-lines">
-          <dt>锁定押金</dt><dd>{money(deposit)} tUSD</dd>
+          <dt>锁定押金</dt><dd>{money(deposit)} USD</dd>
           <dt>还款后信用分</dt><dd>{scoreOf(after)} 分</dd>
-          <dt>还款后额度</dt><dd>{money(limitOf(after))} tUSD</dd>
-          <dt>下次报价</dt><dd>{money(priceOf(after))} tUSD</dd>
+          <dt>还款后额度</dt><dd>{money(limitOf(after))} USD</dd>
+          <dt>下次报价</dt><dd>{money(priceOf(after))} USD</dd>
         </dl>
-        {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>按时还清 {money(before.debt)} tUSD</button>}
+        {!started && <button className="btn primary scene-cta" onClick={() => setStarted(true)}>按时还清 {money(before.debt)} USD</button>}
         {started && !done && <p className="run-live" role="status"><i aria-hidden="true"/>写入行为账本…</p>}
       </div>
       {started && <ol className="sequence" aria-live="polite">{steps.map((s, i) =>
@@ -277,15 +278,15 @@ function ShareCard() {
 function DoneScene({ card, onAgain, onRebind }) {
   const previous = card.repayments > 0 && !card.debt ? { ...card, repayments: card.repayments - 1 } : null
   const saved = previous ? priceOf(previous) - priceOf(card) : 0
-  return <Scene act="收尾 · 这一单留下了什么" title={saved > 0 ? `同一项服务，现在便宜 ${money(saved)} tUSD` : '这一单已经记进账本'}
+  return <Scene act="收尾 · 这一单留下了什么" title={saved > 0 ? `同一项服务，现在便宜 ${money(saved)} USD` : '这一单已经记进账本'}
     intro="分数、额度、报价都是同一份还款记录算出来的结果。再来一单，价格会按新的额度重新报。">
     <div className="done-stage">
       <CardFace profile={card.profile} name={card.name} score={scoreOf(card)} limit={limitOf(card) - card.debt} id={card.id}/>
       <div className="done-copy">
         {previous ? <dl className="ticket-lines">
           <dt>信用分</dt><dd>{scoreOf(previous)} → {scoreOf(card)}</dd>
-          <dt>授信额度</dt><dd>{money(limitOf(previous))} → {money(limitOf(card))} tUSD</dd>
-          <dt>服务报价</dt><dd>{money(priceOf(previous))} → {money(priceOf(card))} tUSD</dd>
+          <dt>授信额度</dt><dd>{money(limitOf(previous))} → {money(limitOf(card))} USD</dd>
+          <dt>服务报价</dt><dd>{money(priceOf(previous))} → {money(priceOf(card))} USD</dd>
           <dt>累计按时还款</dt><dd>{card.repayments} 期</dd>
         </dl> : <p>这张卡还没有还款记录。</p>}
         <div className="done-actions">

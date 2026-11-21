@@ -5,7 +5,7 @@ import { Rolling, Bars, tone } from '../ui.jsx'
 // Same order and units as BehaviorBook.features()
 const FIELDS = [
   { label: '地址年龄', unit: '天', min: 0, max: 730, step: 5 },
-  { label: '押金', unit: '百 tUSD', min: 0, max: 10000, step: 100 },
+  { label: '押金', unit: '百 USD', min: 0, max: 10000, step: 100 },
   { label: '最长拖欠', unit: '期', min: 0, max: 8, step: 1 },
   { label: '逾期次数', unit: '次', min: 0, max: 6, step: 1 },
   { label: '累计还款比例', unit: '‰', min: 0, max: 1000, step: 10 },
@@ -71,10 +71,10 @@ export default function Trial() {
         </section>
         <section className={`panel result ${res ? tone(res.score) : ''}`}>
           <h2>{PRESETS.find(p => p.f === f)?.label || '自定义记录'}的试算结果</h2><div className="result-score">{fresh ? <Rolling value={res.score} ms={400} /> : '—'}<small>分</small></div>
-          <p className="result-limit">押金 {num(deposit)} → 额度 <b>{fresh ? <Rolling value={limit} ms={400} /> : '—'}</b> tUSD</p>
+          <p className="result-limit">押金 {num(deposit)} → 额度 <b>{fresh ? <Rolling value={limit} ms={400} /> : '—'}</b> USD</p>
           {fresh && <>
             {res.last && res.last.limit !== limit && <p className="comparison" role="status">
-              比上次试算{limit > res.last.limit ? '多' : '少'} {num(Math.abs(limit-res.last.limit))} tUSD 额度
+              比上次试算{limit > res.last.limit ? '多' : '少'} {num(Math.abs(limit-res.last.limit))} USD 额度
               <span className="muted small">（{res.last.score} → {res.score} 分）</span>
             </p>}
             <Bars parts={res.parts} />

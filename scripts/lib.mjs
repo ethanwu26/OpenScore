@@ -17,7 +17,7 @@ export const artifacts = JSON.parse(fs.readFileSync(path.join(ROOT, 'artifacts/o
 export const E18 = 10n ** 18n
 export const COLLATERAL = 100_000n * E18 // every score in the demo is quoted against this deposit
 export const BASE_PRICE = 10_000n * E18 // list price of the paid service
-export const MODEL_FEE = 10n ** 15n // 0.001 tUSD per score, paid to the model author
+export const MODEL_FEE = 10n ** 15n // 0.001 USD per score, paid to the model author
 
 // The 8 reference inputs registered with each model, and what each model answers for them.
 export const REF_INPUTS = [
@@ -34,7 +34,7 @@ export const REF_SCORECARD = [1000, 186, 288, 755, 905, 618, 440, 947]
 export const REF_NEURAL = [683, 218, 506, 716, 657, 630, 466, 780]
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-export const tusd = (v) => Number(formatUnits(v, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })
+export const usd = (v) => Number(formatUnits(v, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })
 export const mon = (v) => Number(formatEther(v)).toFixed(4)
 
 export async function connect() {

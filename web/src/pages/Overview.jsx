@@ -16,8 +16,8 @@ function CardPreview() {
       <div className="sample-head"><b>OpenScore</b><span>Agent 模拟副卡</span></div>
       <div className="sample-person">刺猬 · 代码审查助手</div>
       <div className="sample-score">806<small>分</small></div>
-      <div className="sample-limit"><span>可用额度</span><b>80,600 <small>tUSD</small></b></div>
-      <div className="preview-price"><span>同类服务报价</span><b>8,000 <small>tUSD</small></b><em>八折</em></div>
+      <div className="sample-limit"><span>可用额度</span><b>80,600 <small>USD</small></b></div>
+      <div className="preview-price"><span>同类服务报价</span><b>8,000 <small>USD</small></b><em>八折</em></div>
     </div>
     <figcaption>按时还清一单之后：分数、额度、报价一起变。</figcaption>
   </figure>

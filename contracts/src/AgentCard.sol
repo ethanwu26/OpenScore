@@ -9,7 +9,7 @@ interface IERC20Min {
 /// @notice The card is only a binding plus the deposit transfer. Scoring and lending stay in
 ///         CreditPool; this contract answers "whose agent is this" for everyone else.
 contract AgentCard {
-    IERC20Min public immutable tusd;
+    IERC20Min public immutable usd;
 
     mapping(address => address) public ownerOf;      // agent => owner
     mapping(address => string) public nameOf;        // agent => display name
@@ -20,18 +20,18 @@ contract AgentCard {
 
     error AlreadyIssued();
 
-    constructor(address _tusd) {
-        tusd = IERC20Min(_tusd);
+    constructor(address _usd) {
+        usd = IERC20Min(_usd);
     }
 
-    /// @param deposit tUSD moved from the owner to the agent, to be used as the agent's collateral
+    /// @param deposit USD moved from the owner to the agent, to be used as the agent's collateral
     function issue(address agent, string calldata name, uint256 deposit) external {
         if (ownerOf[agent] != address(0)) revert AlreadyIssued();
         ownerOf[agent] = msg.sender;
         nameOf[agent] = name;
         _agentsOf[msg.sender].push(agent);
         agents.push(agent);
-        if (deposit > 0) require(tusd.transferFrom(msg.sender, agent, deposit), "DEPOSIT");
+        if (deposit > 0) require(usd.transferFrom(msg.sender, agent, deposit), "DEPOSIT");
         emit CardIssued(msg.sender, agent, name, deposit);
     }
 

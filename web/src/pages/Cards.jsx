@@ -42,9 +42,9 @@ function AgentCard({ v, mine, busy, now, onAct, canLiquidate }) {
       </div>
 
       <div className="money">
-        <div><span>额度 · tUSD</span><b><Rolling value={Number(v.limit / 10n ** 18n)} /></b></div>
+        <div><span>额度 · USD</span><b><Rolling value={Number(v.limit / 10n ** 18n)} /></b></div>
         <div>
-          <span>服务价 · tUSD</span>
+          <span>服务价 · USD</span>
           <b>{v.priceOk ? <Rolling value={Number(v.price / 10n ** 18n)} /> : '拒绝服务'}{discounted ? <em>八折</em> : null}</b>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function Cards({ board, refresh, agentKeys, anySigner, busy, setB
       if (kind === 'swipe' || kind === 'repay') {
         const agent = localSigner(k.privateKey, k.name)
         if (v.poolAllowance < (kind === 'repay' ? v.debt : COL)) {
-          setReceipt({ title: '正在授权资金池使用 tUSD' })
+          setReceipt({ title: '正在授权资金池使用 USD' })
           const approval = await actions.approvePool(agent)
           setReceipt({ title: '授权成功，正在提交'+titles[kind], hash: approval.hash })
           if (!isLocal) await sleep(1500)
@@ -106,7 +106,7 @@ export default function Cards({ board, refresh, agentKeys, anySigner, busy, setB
       const after = await loadAgent(v.agent).catch(() => null)
       const swiped = r.events.find((e) => e.name === 'Swiped')
       let change = ''
-      if (swiped) change = `商户当场到账 ${fmt(swiped.args.price - swiped.args.interchange)} tUSD；${v.name} 欠 ${fmt(swiped.args.price)}，1 天内还`
+      if (swiped) change = `商户当场到账 ${fmt(swiped.args.price - swiped.args.interchange)} USD；${v.name} 欠 ${fmt(swiped.args.price)}，1 天内还`
       else if (after) change = `${v.name}：${v.score} 分 → ${after.score} 分，额度 ${fmt(v.limit)} → ${fmt(after.limit)}，服务价 ${fmt(v.price)} → ${fmt(after.price)}`
       setReceipt({ title: `${titles[kind]} · ${v.name}`, hash: r.hash, gas: r.gas, ms: r.ms, lines: describe(r.events), change })
     } catch (e) {
@@ -129,8 +129,8 @@ export default function Cards({ board, refresh, agentKeys, anySigner, busy, setB
 
       <section className="stats">
         <Stat label="已发卡" value={Number(pool.agentCount)} hint="张" />
-        <Stat label="资金池可用" value={Number(pool.liquidity / 10n ** 18n)} hint="tUSD" />
-        <Stat label="在贷欠款" value={Number(pool.outstanding / 10n ** 18n)} hint="tUSD" />
+        <Stat label="资金池可用" value={Number(pool.liquidity / 10n ** 18n)} hint="USD" />
+        <Stat label="在贷欠款" value={Number(pool.outstanding / 10n ** 18n)} hint="USD" />
         <Stat label="商户已收" value={Number(pool.merchantBalance / 10n ** 18n)} hint={`${pool.purchases} 笔`} />
         <Stat label="池内累计手续费" value={Number(pool.earned / 10n ** 18n)} hint="每笔刷卡 1% 手续费" />
       </section>

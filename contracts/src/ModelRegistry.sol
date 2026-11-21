@@ -19,7 +19,7 @@ contract ModelRegistry {
     struct Model {
         address model;
         address author;
-        uint96 fee; // tUSD units charged per score() call
+        uint96 fee; // USD units charged per score() call
         bytes32 codehash;
         uint32 n;
         bool failed;

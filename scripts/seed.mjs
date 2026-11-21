@@ -5,7 +5,7 @@
 // Agent keys are generated here and saved to deployments/demo-keys.<chainId>.json (git-ignored).
 // Safe to re-run: every step first looks at what is already on chain.
 import {
-  connect, deployerFrom, signerFrom, send, callTx, read, loadState, loadKeys, saveKeys, mon, tusd, sleep,
+  connect, deployerFrom, signerFrom, send, callTx, read, loadState, loadKeys, saveKeys, mon, usd, sleep,
   COLLATERAL, E18, generatePrivateKey, privateKeyToAccount, spentWei,
 } from './lib.mjs'
 
@@ -35,11 +35,11 @@ for (const p of PLAN) {
 saveKeys(ctx, keys)
 
 const view = (a) => read(ctx, 'OpenScoreLens', st.lens, 'agentView', [a])
-const line = (v) => `${String(v.score).padStart(4)} 分  额度 ${tusd(v.limit).padStart(7)}  服务价 ${tusd(v.price).padStart(6)}  违约 ${v.defaults}  记录 ${v.periods} 期`
+const line = (v) => `${String(v.score).padStart(4)} 分  额度 ${usd(v.limit).padStart(7)}  服务价 ${usd(v.price).padStart(6)}  违约 ${v.defaults}  记录 ${v.periods} 期`
 
 console.log(`链 ${ctx.chainId}  主人 ${me.address}  余额 ${mon(await ctx.pub.getBalance({ address: me.address }))} MON`)
-if ((await read(ctx, 'MockTUSD', st.tusd, 'allowance', [me.address, st.card])) < DEPOSIT * 10n) {
-  await send(ctx, me, callTx('MockTUSD', st.tusd, 'approve', [st.card, MAX]), '主人授权发卡合约')
+if ((await read(ctx, 'MockUSD', st.usd, 'allowance', [me.address, st.card])) < DEPOSIT * 10n) {
+  await send(ctx, me, callTx('MockUSD', st.usd, 'approve', [st.card, MAX]), '主人授权发卡合约')
 }
 
 for (const p of PLAN) {
@@ -50,7 +50,7 @@ for (const p of PLAN) {
   // 1. card + deposit
   const owner = await read(ctx, 'AgentCard', st.card, 'ownerOf', [k.address])
   if (owner === '0x0000000000000000000000000000000000000000') {
-    await send(ctx, me, callTx('MockTUSD', st.tusd, 'mint', [me.address, DEPOSIT]), '铸造押金')
+    await send(ctx, me, callTx('MockUSD', st.usd, 'mint', [me.address, DEPOSIT]), '铸造押金')
     await send(ctx, me, callTx('AgentCard', st.card, 'issue', [k.address, k.name, DEPOSIT]), '发卡并划拨押金')
   }
   // 2. gas for the agent. A MON transfer must not follow another transaction too closely.
@@ -63,7 +63,7 @@ for (const p of PLAN) {
   // 3. the agent lets the pool pull collateral and repayments
   let v = await view(k.address)
   if (v.poolAllowance < DEPOSIT) {
-    await send(ctx, agent, callTx('MockTUSD', st.tusd, 'approve', [st.pool, MAX]), 'Agent 授权资金池')
+    await send(ctx, agent, callTx('MockUSD', st.usd, 'approve', [st.pool, MAX]), 'Agent 授权资金池')
   }
   console.log('  发卡后  ', line(v))
   if (p.role === 'fresh') continue
@@ -97,6 +97,6 @@ for (const p of PLAN) {
 
 console.log('\n现在的榜单')
 const [list, pv] = await read(ctx, 'OpenScoreLens', st.lens, 'board', [50n])
-for (const v of list) console.log(`  ${v.name.padEnd(8)} ${line(v)}  余额 ${tusd(v.balance)}  gas ${mon(v.gasBalance)} MON`)
-console.log(`  资金池：可用 ${tusd(pv.liquidity)}，在贷 ${tusd(pv.outstanding)}，手续费收入 ${tusd(pv.earned)}；商户已收 ${tusd(pv.merchantBalance)}`)
+for (const v of list) console.log(`  ${v.name.padEnd(8)} ${line(v)}  余额 ${usd(v.balance)}  gas ${mon(v.gasBalance)} MON`)
+console.log(`  资金池：可用 ${usd(pv.liquidity)}，在贷 ${usd(pv.outstanding)}，手续费收入 ${usd(pv.earned)}；商户已收 ${usd(pv.merchantBalance)}`)
 console.log(`\n本次花费 ${mon(spentWei)} MON。Agent 私钥在 deployments/demo-keys.${ctx.chainId}.json，前端"导入演示密钥"时粘贴该文件内容。`)

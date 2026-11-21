@@ -148,7 +148,7 @@ function Admin() {
           const k = agentKeys.find(k => k.address.toLowerCase() === v.agent.toLowerCase())
           const signer = () => localSigner(k.privateKey, k.name)
           return <div className="admin-card" key={v.agent}><b>{v.name} · {v.score} 分</b>
-            <p>{k ? '已持有密钥' : '未导入密钥'} · {fmtMon(v.gasBalance)} MON · 余额 {fmt(v.balance)} tUSD · {v.hasOpenLoan ? '待还 '+fmt(v.debt) : '无欠款'}</p>
+            <p>{k ? '已持有密钥' : '未导入密钥'} · {fmtMon(v.gasBalance)} MON · 余额 {fmt(v.balance)} USD · {v.hasOpenLoan ? '待还 '+fmt(v.debt) : '无欠款'}</p>
             <div className="row"><button className="btn" disabled={busy || !operator} onClick={() => run('补 gas', () => sendMon(operator, v.agent, AGENT_GAS))}>补 0.5 MON</button>
             <button className="btn" disabled={busy || !k || v.poolAllowance >= COL+v.debt} onClick={() => run('授权资金池', () => actions.approvePool(signer()))}>授权资金池</button>
             <button className="btn" disabled={busy || !k || v.hasOpenLoan} onClick={() => run('创建到期账单', () => actions.swipe(signer(), 0))}>刷卡并立即到期</button></div>

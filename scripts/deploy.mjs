@@ -2,7 +2,7 @@
 // Safe to re-run: each finished step is saved, a second run continues where the first one stopped.
 //   node scripts/deploy.mjs            # uses PRIVATE_KEY and RPC_URL from .env
 import {
-  connect, deployerFrom, send, deployTx, callTx, read, eventsOf, loadState, saveState, mon, tusd, spentGas, spentWei,
+  connect, deployerFrom, send, deployTx, callTx, read, eventsOf, loadState, saveState, mon, usd, spentGas, spentWei,
   REF_INPUTS, REF_SCORECARD, REF_NEURAL, COLLATERAL, BASE_PRICE, MODEL_FEE, E18, privateKeyToAccount, generatePrivateKey,
 } from './lib.mjs'
 
@@ -29,7 +29,7 @@ async function once(key, fn) {
   return state[key]
 }
 
-const token = await deploy('tusd', 'MockTUSD')
+const token = await deploy('usd', 'MockUSD')
 const registry = await deploy('registry', 'ModelRegistry')
 const scoreCard = await deploy('scoreCard', 'ScoreCard')
 const scoreCardAlt = await deploy('scoreCardAlt', 'ScoreCardAlt')
@@ -58,8 +58,8 @@ const bench = await deploy('bench', 'Bench')
 
 await once('liquidity', async () => {
   const amount = 5_000_000n * E18
-  await send(ctx, me, callTx('MockTUSD', token, 'mint', [me.address, amount]), '铸造流动性')
-  await send(ctx, me, callTx('MockTUSD', token, 'approve', [pool, 2n ** 256n - 1n]), '授权资金池')
+  await send(ctx, me, callTx('MockUSD', token, 'mint', [me.address, amount]), '铸造流动性')
+  await send(ctx, me, callTx('MockUSD', token, 'approve', [pool, 2n ** 256n - 1n]), '授权资金池')
   await send(ctx, me, callTx('CreditPool', pool, 'deposit', [amount]), '注入流动性')
   return true
 })
@@ -86,7 +86,7 @@ expect('神经网络与登记值的最大偏差', d2, 0)
 const fresh = privateKeyToAccount(generatePrivateKey()).address
 const [s0, l0] = await read(ctx, 'CreditPool', pool, 'quote', [fresh, COLLATERAL])
 expect('全新地址的分数', s0, 288)
-expect('全新地址的额度', tusd(l0), '28,800')
+expect('全新地址的额度', usd(l0), '28,800')
 const st = await read(ctx, 'DecoyPool', decoyPool, 'status', [fresh, COLLATERAL])
 if (st[2]) {
   expect('诱饵池当前可借（抽检前）', st[3], true)

@@ -9,7 +9,7 @@ import {ShiftModel} from "../src/ShiftModel.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {BehaviorBook} from "../src/BehaviorBook.sol";
 import {CreditPool} from "../src/CreditPool.sol";
-import {MockTUSD} from "../src/MockTUSD.sol";
+import {MockUSD} from "../src/MockUSD.sol";
 
 interface IToken {
     function approve(address, uint256) external returns (bool);
@@ -34,7 +34,7 @@ contract Actor {
 contract Base {
     address constant VM = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
 
-    MockTUSD token;
+    MockUSD token;
     RiskModel model;
     RiskModelAlt alt;
     RiskModelDrift drift;
@@ -51,7 +51,7 @@ contract Base {
     }
 
     function setUp() public virtual {
-        token = new MockTUSD();
+        token = new MockUSD();
         model = new RiskModel();
         alt = new RiskModelAlt();
         drift = new RiskModelDrift();

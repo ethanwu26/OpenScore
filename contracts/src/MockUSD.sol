@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @title MockTUSD — test stablecoin with a faucet. 18 decimals, 1e18 = 1 tUSD.
-contract MockTUSD {
-    string public constant name = "Test TUSD";
-    string public constant symbol = "tUSD";
+/// @title MockUSD — test stablecoin with a faucet. 18 decimals, 1e18 = 1 USD.
+contract MockUSD {
+    string public constant name = "Test USD";
+    string public constant symbol = "USD";
     uint8 public constant decimals = 18;
 
     mapping(address => uint256) public balanceOf;

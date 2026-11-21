@@ -47,7 +47,7 @@ export function changeCard(card, action, input = {}) {
     const name = typeof input.name === 'string' ? input.name.trim() : ''
     if (!name || name.length > 24) throw new Error('请填写 1 至 24 个字符的 Agent 昵称。')
     const next = { id: card?.id || 'SIM-' + crypto.randomUUID().slice(0, 8).toUpperCase(), name, profile, revision: (card?.revision || 0) + 1, repayments: 0, debt: 0 }
-    next.history = [{when, title: card ? '已更换档案并重新授信' : '已绑定模拟档案并授信', detail: `${tierNames[profile.tier]}分档 · ${scoreOf(next)} 分，额度 ${money(limitOf(next))} tUSD。`}, ...(card?.history || [])].slice(0,8)
+    next.history = [{when, title: card ? '已更换档案并重新授信' : '已绑定模拟档案并授信', detail: `${tierNames[profile.tier]}分档 · ${scoreOf(next)} 分，额度 ${money(limitOf(next))} USD。`}, ...(card?.history || [])].slice(0,8)
     return next
   }
   if (!card) throw new Error('请先确认授信。')
@@ -55,11 +55,11 @@ export function changeCard(card, action, input = {}) {
   let entry
   if (action === 'swipe' && !card.debt) {
     next.debt = priceOf(card)
-    entry = { when, title: '已购买一次推理服务', detail: `记账 ${money(next.debt)} tUSD，商户收到 ${money(next.debt * 0.99)}，手续费 ${money(next.debt / 100)}。` }
+    entry = { when, title: '已购买一次推理服务', detail: `记账 ${money(next.debt)} USD，商户收到 ${money(next.debt * 0.99)}，手续费 ${money(next.debt / 100)}。` }
   } else if (action === 'repay' && card.debt) {
     next.debt = 0
     next.repayments++
-    entry = { when, title: `按时还清 ${money(card.debt)} tUSD`, detail: `信用分 ${scoreOf(card)} → ${scoreOf(next)}，额度 ${money(limitOf(next))} tUSD，下次报价 ${money(priceOf(next))} tUSD。` }
+    entry = { when, title: `按时还清 ${money(card.debt)} USD`, detail: `信用分 ${scoreOf(card)} → ${scoreOf(next)}，额度 ${money(limitOf(next))} USD，下次报价 ${money(priceOf(next))} USD。` }
   } else {
     throw new Error('当前账单无法执行此操作，请刷新后重试。')
   }

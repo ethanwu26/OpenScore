@@ -220,7 +220,7 @@ export const actions = {
   swipe: (agent, lockDays) => write(agent, 'CreditPool', dep.pool, 'swipe', [dep.shop, COL, lockDays]),
   repay: (agent, loanId, amount) => write(agent, 'CreditPool', dep.pool, 'repay', [loanId, amount]),
   liquidate: (signer, loanId) => write(signer, 'CreditPool', dep.pool, 'liquidate', [loanId]),
-  approvePool: (agent) => write(agent, 'MockTUSD', dep.tusd, 'approve', [dep.pool, MAX]),
+  approvePool: (agent) => write(agent, 'MockUSD', dep.usd, 'approve', [dep.pool, MAX]),
   audit: (signer, id, k) => write(signer, 'ModelRegistry', dep.registry, 'audit', [id, k], { pad: 140n }),
   arm: (signer) => write(signer, 'DecoyPool', dep.decoyPool, 'arm', []),
   settle: (signer, dense, n) => write(signer, 'Bench', dep.bench, dense ? 'payDense' : 'payScattered', [BigInt(n), 1n], { pad: 104n }),
@@ -240,9 +240,9 @@ export const actions = {
     keys.addAgent({ name, address: agent.address, privateKey }) // saved before any money moves
     const step = async (label, p) => { onStep?.({ label, state: 'run' }); const r = await p(); onStep?.({ label, state: 'ok', hash: r?.hash }); await gap(); return r }
 
-    await step('铸造 300,000 tUSD 押金（测试币）', () => write(owner, 'MockTUSD', dep.tusd, 'mint', [owner.address, DEPOSIT]))
-    const allowance = await pub.readContract({ address: dep.tusd, abi: abis.MockTUSD, functionName: 'allowance', args: [owner.address, dep.card] })
-    if (allowance < DEPOSIT) await step('主人授权发卡合约', () => write(owner, 'MockTUSD', dep.tusd, 'approve', [dep.card, MAX]))
+    await step('铸造 300,000 USD 押金（测试币）', () => write(owner, 'MockUSD', dep.usd, 'mint', [owner.address, DEPOSIT]))
+    const allowance = await pub.readContract({ address: dep.usd, abi: abis.MockUSD, functionName: 'allowance', args: [owner.address, dep.card] })
+    if (allowance < DEPOSIT) await step('主人授权发卡合约', () => write(owner, 'MockUSD', dep.usd, 'approve', [dep.card, MAX]))
     await step('发卡，押金划给 Agent', () => write(owner, 'AgentCard', dep.card, 'issue', [agent.address, name, DEPOSIT]))
     if (!isLocal) await sleep(1500) // a MON transfer must not follow another transaction too closely
     await step('给 Agent 转 0.5 MON 作 gas', () => sendMon(owner, agent.address, AGENT_GAS))

@@ -52,7 +52,7 @@ interface ILensShop {
 /// @notice One eth_call returns everything a page needs, so the demo does not depend on
 ///         log queries or on dozens of round trips to a public RPC. Holds no state.
 contract OpenScoreLens {
-    ILensToken public immutable tusd;
+    ILensToken public immutable usd;
     ILensCard public immutable card;
     ILensPool public immutable pool;
     ILensBook public immutable book;
@@ -75,7 +75,7 @@ contract OpenScoreLens {
         uint32 defaults;
         uint64 lastDefault;
         uint64 firstSeen;
-        uint256 balance; // tUSD
+        uint256 balance; // USD
         uint256 gasBalance; // native MON
         uint256 poolAllowance;
         bool priceOk;
@@ -105,7 +105,7 @@ contract OpenScoreLens {
     }
 
     constructor(
-        address _tusd,
+        address _usd,
         address _card,
         address _pool,
         address _book,
@@ -114,7 +114,7 @@ contract OpenScoreLens {
         address _neural,
         uint128 _refCollateral
     ) {
-        tusd = ILensToken(_tusd);
+        usd = ILensToken(_usd);
         card = ILensCard(_card);
         pool = ILensPool(_pool);
         book = ILensBook(_book);
@@ -146,9 +146,9 @@ contract OpenScoreLens {
         v.defaults = book.defaultsOf(a);
         v.lastDefault = book.lastDefaultOf(a);
         v.firstSeen = book.firstSeenOf(a);
-        v.balance = tusd.balanceOf(a);
+        v.balance = usd.balanceOf(a);
         v.gasBalance = a.balance;
-        v.poolAllowance = tusd.allowance(a, address(pool));
+        v.poolAllowance = usd.allowance(a, address(pool));
 
         uint256[] memory ids = pool.loansOf(a);
         v.loanCount = ids.length;
@@ -175,7 +175,7 @@ contract OpenScoreLens {
         p.basePrice = shop.basePrice();
         p.purchases = shop.purchases();
         p.merchant = shop.merchant();
-        p.merchantBalance = tusd.balanceOf(p.merchant);
+        p.merchantBalance = usd.balanceOf(p.merchant);
         p.agentCount = card.agentCount();
         p.blockTime = block.timestamp;
         p.blockNumber = block.number;

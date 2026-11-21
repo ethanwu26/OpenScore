@@ -37,7 +37,7 @@ export default function App() {
       {deployed && index >= 0 && <>
         <div className="chapter-line">演示 {index+1} / 4 <span>{chapters[index].label}</span></div>
         <section className="lead"><h1>{chapters[index].title}</h1><p>{[
-          '先选「守信还款」，再选「逾期一次」。同样押入 100,000 tUSD，比较两次的信用分和额度。',
+          '先选「守信还款」，再选「逾期一次」。同样押入 100,000 USD，比较两次的信用分和额度。',
           '先看松鼠的新卡，再看刺猬和狐狸。演示者刷卡后，商户立即收款；还清账单后，再比较额度和同一项服务的价格。',
           '左侧是资金池使用的模型，右侧的演示模型给每档押金多算 10 分。抽检时合约随机取样重算，结果不符就永久冻结该模型。',
           '每期都要为每个 Agent 更新账本。这里用同一份合约比较两种写法：各写了多少户，每户花了多少 gas。'

@@ -13,7 +13,6 @@ import {CreditShop} from "../src/CreditShop.sol";
 import {OpenScoreLens} from "../src/OpenScoreLens.sol";
 import {DecoyPool} from "../src/DecoyPool.sol";
 import {Bench} from "../src/Bench.sol";
-import {MerchantTreasury} from "../src/MerchantTreasury.sol";
 
 interface Vm {
     function prank(address) external;
@@ -314,24 +313,5 @@ contract CardTest {
         eq(shop.volume(), PRICE, "volume");
         eq(shop.paidBy(agent), PRICE, "agent charged");
         eq(shop.receivedBy(merchant), PRICE, "merchant credited");
-    }
-
-    function testMerchantTreasuryPaysOnlyTheMerchant() public {
-        MerchantTreasury t = new MerchantTreasury(address(token), merchant);
-        token.mint(address(t), 1_000e18);
-        eq(t.balance(), 1_000e18, "balance");
-
-        vm.expectRevert(MerchantTreasury.NotMerchant.selector);
-        vm.prank(stranger);
-        t.withdraw(stranger, 1e18);
-
-        vm.prank(merchant);
-        t.withdraw(merchant, 400e18);
-        eq(token.balanceOf(merchant), 400e18, "paid out");
-
-        vm.prank(merchant);
-        t.withdrawAll(merchant);
-        eq(t.balance(), 0, "swept");
-        eq(t.totalWithdrawn(), 1_000e18, "total");
     }
 }

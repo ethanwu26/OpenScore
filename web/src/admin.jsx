@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { actions, explain, fmt, fmtMon, short, localSigner, injectedSigner, keys, normalizeKey, sendMon, AGENT_GAS, currentRpc, setRpc, deployed, loadAudit, loadBench, balanceOf, COL } from './chain.js'
+import { actions, explain, fmt, fmtMon, num, short, localSigner, injectedSigner, keys, normalizeKey, sendMon, AGENT_GAS, currentRpc, setRpc, deployed, loadAudit, loadBench, balanceOf, COL } from './chain.js'
 import { Receipt, Tx, describe } from './ui.jsx'
 import useSession from './useSession.js'
 import './styles.css'
@@ -154,6 +154,17 @@ function Admin() {
             <button className="btn" disabled={busy || !k || v.hasOpenLoan} onClick={() => run('创建到期账单', () => actions.swipe(signer(), 0))}>刷卡并立即到期</button></div>
           </div>
         })}
+      </section>
+      <section className="panel"><h2>收款与结算</h2>
+        <p className="muted">刷卡款在成交那一笔里直接转到商户钱包：没有托管合约，也不需要提现或领取。</p>
+        <dl className="preflight">
+          <dt>结算方式</dt><dd>成交即到账（池子付款给商户，同时记账给 Agent）</dd>
+          <dt>商户地址</dt><dd>{board ? short(board.pool.merchant) : '等待链上数据'}</dd>
+          <dt>商户已收</dt><dd>{board ? fmt(board.pool.merchantBalance) + ' USD' : '—'}</dd>
+          <dt>成交</dt><dd>{board ? num(board.pool.purchases) + ' 笔 · 标价 ' + fmt(board.pool.basePrice) + ' USD' : '—'}</dd>
+          <dt>手续费</dt><dd>{board ? fmt(board.pool.earned) + ' USD · 每笔 1%，留在资金池按份额归出资人' : '—'}</dd>
+          <dt>资金池</dt><dd>{board ? '可贷 ' + fmt(board.pool.liquidity) + ' · 在贷 ' + fmt(board.pool.outstanding) + ' USD' : '—'}</dd>
+        </dl>
       </section>
       <section className="panel"><h3>抽检布置</h3><p>{auditErr || (!audit ? '正在读取模型状态…' : audit.decoy.usable ? '演示模型可抽检' : '演示模型需要重新布置')}</p>
       <button className="btn" disabled={!anySigner || busy || !audit || audit.decoy.usable} onClick={() => run('重新布置', () => actions.arm(anySigner))}>重新布置演示模型</button></section>
